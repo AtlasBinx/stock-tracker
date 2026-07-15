@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Turso (libsql) is used in production via the adapter in src/lib/db.ts
+
 model GuitarProduct {
   id          Int      @id @default(autoincrement())
   shopifyId   String   @unique  // Shopify product ID

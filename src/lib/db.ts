@@ -1,17 +1,25 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 import path from "path";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-function createPrismaClient() {
-  // Build absolute path so OneDrive/Windows relative paths don't cause issues
+function createPrismaClient(): PrismaClient {
+  const tursoUrl = process.env.TURSO_DATABASE_URL;
+  const tursoToken = process.env.TURSO_AUTH_TOKEN;
+
+  if (tursoUrl && tursoToken) {
+    const adapter = new PrismaLibSQL({ url: tursoUrl, authToken: tursoToken });
+    return new PrismaClient({ adapter } as any);
+  }
+
+  // Local dev: SQLite file
   const dbPath = path
     .resolve(process.cwd(), "prisma", "dev.db")
     .replace(/\\/g, "/");
-
   return new PrismaClient({
     datasources: { db: { url: `file:${dbPath}` } },
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    log: ["error", "warn"],
   });
 }
 
