@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { sendStockAddedEmail } from "./mailer";
+import { sendStockAddedEmail, sendBackInStockEmail } from "./mailer";
 
 const STORE_URL = "https://guitarsgarden.com/products.json?limit=250";
 
@@ -158,22 +158,23 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
     }
   }
 
-  // Send email alerts if anything was added — only to active paid subscribers
-  if (added.length > 0) {
+  // Send email alerts — only to active paid subscribers
+  if (added.length > 0 || wentInStock.length > 0) {
     const now = new Date();
     const subscribers = await db.subscriber.findMany({
       where: {
         active: true,
         planStatus: "active",
         OR: [
-          { accessExpiresAt: null },           // monthly (no expiry)
-          { accessExpiresAt: { gt: now } },    // prepaid with future expiry
+          { accessExpiresAt: null },
+          { accessExpiresAt: { gt: now } },
         ],
       },
       select: { name: true, email: true },
     });
     if (subscribers.length > 0) {
-      await sendStockAddedEmail(subscribers, added);
+      if (added.length > 0) await sendStockAddedEmail(subscribers, added);
+      if (wentInStock.length > 0) await sendBackInStockEmail(subscribers, wentInStock);
     }
   }
 
