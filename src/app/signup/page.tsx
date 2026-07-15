@@ -129,9 +129,6 @@ export default function SignupPage() {
         )}
       </div>
 
-      <p className="mt-6 text-xs" style={{ color: "var(--text-muted)" }}>
-        <a href="/" className="hover:underline">← Back to dashboard</a>
-      </p>
     </div>
   );
 }
