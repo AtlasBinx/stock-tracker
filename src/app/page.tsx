@@ -75,6 +75,7 @@ export default function DashboardPage() {
   const [filter, setFilter]         = useState<"all" | "available" | "unavailable" | "removed">("all");
   const [tab, setTab]               = useState<Tab>("catalog");
   const [syncing, setSyncing]       = useState(false);
+  const [testEmailStatus, setTestEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [loading, setLoading]       = useState(true);
   const [lastSync, setLastSync]     = useState<Date | null>(null);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
@@ -108,6 +109,20 @@ export default function DashboardPage() {
     if (!confirm("Remove this subscriber?")) return;
     await fetch(`/api/subscribe/${id}`, { method: "DELETE" });
     setSubscribers((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  async function handleTestEmail() {
+    setTestEmailStatus("sending");
+    try {
+      const res = await fetch("/api/test-email", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setTestEmailStatus("sent");
+      setTimeout(() => setTestEmailStatus("idle"), 4000);
+    } catch {
+      setTestEmailStatus("error");
+      setTimeout(() => setTestEmailStatus("idle"), 4000);
+    }
   }
 
   async function handleSync() {
@@ -205,7 +220,23 @@ export default function DashboardPage() {
       </div>
 
       {tab === "subscribers" ? (
-        <SubscriberTable subscribers={subscribers} onRemove={handleUnsubscribe} />
+        <div>
+          <div className="mb-4 flex items-center justify-end">
+            <button
+              onClick={handleTestEmail}
+              disabled={testEmailStatus === "sending"}
+              className="rounded-lg px-4 py-2 text-sm font-medium ring-1 transition disabled:opacity-50"
+              style={{
+                backgroundColor: testEmailStatus === "sent" ? "rgba(16,185,129,0.1)" : testEmailStatus === "error" ? "rgba(239,68,68,0.1)" : "var(--surface)",
+                color: testEmailStatus === "sent" ? "#34d399" : testEmailStatus === "error" ? "#f87171" : "var(--text-muted)",
+                ringColor: "var(--border)",
+              }}
+            >
+              {testEmailStatus === "sending" ? "Sending…" : testEmailStatus === "sent" ? "✓ Test email sent!" : testEmailStatus === "error" ? "✕ Failed — check console" : "Send Test Email"}
+            </button>
+          </div>
+          <SubscriberTable subscribers={subscribers} onRemove={handleUnsubscribe} />
+        </div>
       ) : (
       /* ── Two-column layout ── */
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

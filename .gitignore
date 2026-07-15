@@ -52,3 +52,5 @@ next-env.d.ts
 add-subscriber-table.mjs
 check-db.mjs
 migrate-turso.mjs
+
+.vercel
