@@ -229,7 +229,7 @@ export default function DashboardPage() {
               style={{
                 backgroundColor: testEmailStatus === "sent" ? "rgba(16,185,129,0.1)" : testEmailStatus === "error" ? "rgba(239,68,68,0.1)" : "var(--surface)",
                 color: testEmailStatus === "sent" ? "#34d399" : testEmailStatus === "error" ? "#f87171" : "var(--text-muted)",
-                ringColor: "var(--border)",
+                border: "1px solid var(--border)",
               }}
             >
               {testEmailStatus === "sending" ? "Sending…" : testEmailStatus === "sent" ? "✓ Test email sent!" : testEmailStatus === "error" ? "✕ Failed — check console" : "Send Test Email"}
