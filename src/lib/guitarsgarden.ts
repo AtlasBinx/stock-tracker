@@ -158,10 +158,18 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
     }
   }
 
-  // Send email alerts if anything was added
+  // Send email alerts if anything was added — only to active paid subscribers
   if (added.length > 0) {
+    const now = new Date();
     const subscribers = await db.subscriber.findMany({
-      where: { active: true },
+      where: {
+        active: true,
+        planStatus: "active",
+        OR: [
+          { accessExpiresAt: null },           // monthly (no expiry)
+          { accessExpiresAt: { gt: now } },    // prepaid with future expiry
+        ],
+      },
       select: { name: true, email: true },
     });
     if (subscribers.length > 0) {

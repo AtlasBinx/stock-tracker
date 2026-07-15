@@ -54,10 +54,44 @@ enum GuitarEventType {
 }
 
 model Subscriber {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  phone     String?
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id                   Int            @id @default(autoincrement())
+  name                 String
+  email                String         @unique
+  phone                String?
+  active               Boolean        @default(true)
+  createdAt            DateTime       @default(now())
+
+  // Stripe
+  stripeCustomerId     String?        @unique
+  stripeSubscriptionId String?        @unique
+  plan                 String?        // monthly | 3month | annual
+  planStatus           String?        // active | cancelled | expired
+  accessExpiresAt      DateTime?
+  promoCode            String?
+
+  affiliateUses        AffiliateUse[]
+}
+
+model AffiliateCode {
+  id                Int            @id @default(autoincrement())
+  code              String         @unique
+  creatorName       String
+  stripeCouponId    String?
+  stripePromoCodeId String?
+  active            Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+
+  uses              AffiliateUse[]
+}
+
+model AffiliateUse {
+  id           Int           @id @default(autoincrement())
+  codeId       Int
+  code         AffiliateCode @relation(fields: [codeId], references: [id])
+  subscriberId Int
+  subscriber   Subscriber    @relation(fields: [subscriberId], references: [id])
+  plan         String
+  amount       Float
+  bounty       Float
+  createdAt    DateTime      @default(now())
 }
