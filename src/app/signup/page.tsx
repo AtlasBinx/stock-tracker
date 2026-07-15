@@ -14,8 +14,8 @@ export default function PricingPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [conflictData, setConflictData] = useState<{ subscriptionId: string; customerId: string } | null>(null);
   const [agreed, setAgreed] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
 
-  // Auto-fill promo code from ?ref= URL param
   useEffect(() => {
     const ref = new URLSearchParams(window.location.search).get("ref");
     if (ref) setPromoCode(ref.toUpperCase());
@@ -23,14 +23,21 @@ export default function PricingPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!agreed) { setErrorMsg("Please agree to the terms before continuing."); return; }
+    if (!agreed) { setErrorMsg("Please agree to the billing terms before continuing."); return; }
+    if (!smsConsent) { setErrorMsg("Please agree to receive SMS alerts — they're included with every plan."); return; }
+    if (!form.phone) { setErrorMsg("A phone number is required to receive SMS alerts."); return; }
     setStatus("loading");
     setErrorMsg("");
 
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: selectedPlan, ...form, promoCode: promoCode || undefined }),
+      body: JSON.stringify({
+        plan: selectedPlan,
+        ...form,
+        promoCode: promoCode || undefined,
+        smsConsent,
+      }),
     });
 
     if (res.status === 409) {
@@ -53,7 +60,6 @@ export default function PricingPage() {
 
   async function handleSwitchPlan() {
     setSwitching(true);
-    // Cancel existing monthly sub then proceed to checkout for the new plan
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -61,6 +67,7 @@ export default function PricingPage() {
         plan: selectedPlan,
         ...form,
         promoCode: promoCode || undefined,
+        smsConsent,
         cancelExisting: true,
       }),
     });
@@ -80,7 +87,7 @@ export default function PricingPage() {
           <p className="text-4xl">🎸</p>
           <h1 className="mt-3 text-3xl font-bold">Guitars Garden Stock Alerts</h1>
           <p className="mt-2" style={{ color: "var(--text-muted)" }}>
-            Get an email the moment new guitars hit the store. Cancel anytime.
+            Get an email <strong className="text-white">and text message</strong> the moment new guitars hit the store.
           </p>
         </div>
 
@@ -119,6 +126,7 @@ export default function PricingPage() {
                     ✓ One-time charge · Never auto-renews
                   </p>
                 )}
+                <p className="mt-1 text-xs text-indigo-300">✓ Email + SMS alerts included</p>
               </button>
             );
           })}
@@ -187,9 +195,11 @@ export default function PricingPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                    Phone <span className="text-xs font-normal" style={{ color: "var(--text-muted)" }}>(optional)</span>
+                    Phone <span className="text-red-400">*</span>
+                    <span className="ml-1 text-xs font-normal" style={{ color: "var(--text-muted)" }}>(for SMS alerts)</span>
                   </label>
                   <input
+                    required
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -212,7 +222,7 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              {/* Terms disclosure */}
+              {/* Order summary / billing terms */}
               <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
                 <p className="font-medium mb-2">Order summary — {plan.name}</p>
                 <ul className="space-y-1 text-xs" style={{ color: "var(--text-muted)" }}>
@@ -222,11 +232,11 @@ export default function PricingPage() {
                     : <li>• This is a one-time charge. Your access ends after {plan.billing} with <strong className="text-emerald-400">no automatic renewal and no future charges.</strong></li>
                   }
                   <li>• Cancel or manage your subscription anytime at <span className="text-indigo-400">stock-tracker-seven-delta.vercel.app/account</span></li>
-                  <li>• Alerts sent to your email only. Unsubscribe from emails at any time.</li>
+                  <li>• Email and SMS alerts sent to your contact info only.</li>
                 </ul>
               </div>
 
-              {/* Consent checkbox */}
+              {/* Billing consent */}
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -235,11 +245,30 @@ export default function PricingPage() {
                   className="mt-0.5 h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
                 />
                 <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  I agree to be charged <strong className="text-white">${plan.price}</strong> for the {plan.name} and understand the terms above.
+                  I agree to be charged <strong className="text-white">${plan.price}</strong> for the {plan.name} and understand the billing terms above.
                 </span>
               </label>
 
-              {status === "error" && (
+              {/* SMS / TCPA consent */}
+              <div className="rounded-xl p-4" style={{ backgroundColor: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={smsConsent}
+                    onChange={(e) => setSmsConsent(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+                    I agree to receive automated SMS stock alert messages from Guitars Garden Alerts at the phone number I provided.
+                    Message frequency varies based on store activity (typically a few times per month).
+                    <strong className="text-white"> Message and data rates may apply.</strong>{" "}
+                    Reply <strong className="text-white">STOP</strong> at any time to opt out of texts.
+                    Opting out of SMS does not cancel your subscription.
+                  </span>
+                </label>
+              </div>
+
+              {(status === "error" || errorMsg) && (
                 <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 ring-1 ring-red-500/30">
                   {errorMsg}
                 </p>
@@ -247,7 +276,7 @@ export default function PricingPage() {
 
               <button
                 type="submit"
-                disabled={status === "loading" || !agreed}
+                disabled={status === "loading" || !agreed || !smsConsent}
                 className="w-full rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50"
               >
                 {status === "loading" ? "Redirecting to checkout…" : `Subscribe — $${plan.price} / ${plan.billing}`}

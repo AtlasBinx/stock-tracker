@@ -36,6 +36,11 @@ export async function POST(req: NextRequest) {
       case "invoice.payment_failed":
         await handlePaymentFailed(event.data.object as Stripe.Invoice);
         break;
+      case "mandate.updated":
+        // PayPal subscribers can cancel directly from their PayPal account —
+        // Stripe fires mandate.updated when their payment method is revoked.
+        await handleMandateUpdated(event.data.object as Stripe.Mandate);
+        break;
     }
   } catch (err) {
     console.error("Webhook handler error:", err);
@@ -48,17 +53,15 @@ export async function POST(req: NextRequest) {
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (session.mode !== "subscription") return;
 
-  const { plan, name, phone, promoCode } = session.metadata ?? {};
+  const { plan, name, phone, promoCode, smsConsent } = session.metadata ?? {};
   const email = session.customer_email ?? session.customer_details?.email;
   if (!email || !plan) return;
 
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
   const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
 
-  // For fixed-term plans, set accessExpiresAt to the period end
   const isPrepaid = plan === "3month" || plan === "annual";
   const accessExpiresAt = isPrepaid ? currentPeriodEnd : null;
-
   const amountPaid = (session.amount_total ?? 0) / 100;
 
   const subscriber = await db.subscriber.upsert({
@@ -74,6 +77,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       planStatus: "active",
       accessExpiresAt,
       promoCode: promoCode || null,
+      smsConsent: smsConsent === "true",
     },
     update: {
       name,
@@ -85,10 +89,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       planStatus: "active",
       accessExpiresAt,
       promoCode: promoCode || null,
+      smsConsent: smsConsent === "true",
     },
   });
 
-  // Track affiliate use
   if (promoCode) {
     const affiliateCode = await db.affiliateCode.findUnique({ where: { code: promoCode.toUpperCase() } });
     if (affiliateCode) {
@@ -104,7 +108,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
   }
 
-  // Send purchase confirmation email
   await sendPurchaseConfirmationEmail({ name, email }, plan, amountPaid, accessExpiresAt);
 }
 
@@ -141,6 +144,26 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  // Stripe's built-in dunning handles retries — we just log here
   console.warn("Payment failed for invoice:", invoice.id);
+}
+
+async function handleMandateUpdated(mandate: Stripe.Mandate) {
+  // When a PayPal subscriber revokes their mandate from PayPal's side,
+  // deactivate their access so it matches the subscription cancellation.
+  if (mandate.status !== "inactive") return;
+
+  const paymentMethod = await stripe.paymentMethods.retrieve(
+    mandate.payment_method as string
+  );
+  if (!paymentMethod.customer) return;
+
+  const customerId =
+    typeof paymentMethod.customer === "string"
+      ? paymentMethod.customer
+      : paymentMethod.customer.id;
+
+  await db.subscriber.updateMany({
+    where: { stripeCustomerId: customerId },
+    data: { active: false, planStatus: "cancelled" },
+  });
 }

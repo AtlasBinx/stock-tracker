@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { sendStockAddedEmail, sendBackInStockEmail } from "./mailer";
+import { sendStockAddedSms, sendBackInStockSms } from "./sms";
 
 const STORE_URL = "https://guitarsgarden.com/products.json?limit=250";
 
@@ -158,7 +159,7 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
     }
   }
 
-  // Send email alerts — only to active paid subscribers
+  // Send alerts — only to active paid subscribers
   if (added.length > 0 || wentInStock.length > 0) {
     const now = new Date();
     const subscribers = await db.subscriber.findMany({
@@ -170,11 +171,22 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
           { accessExpiresAt: { gt: now } },
         ],
       },
-      select: { name: true, email: true },
+      select: { name: true, email: true, phone: true, smsConsent: true },
     });
+
     if (subscribers.length > 0) {
-      if (added.length > 0) await sendStockAddedEmail(subscribers, added);
-      if (wentInStock.length > 0) await sendBackInStockEmail(subscribers, wentInStock);
+      const smsRecipients = subscribers
+        .filter((s) => s.smsConsent && s.phone)
+        .map((s) => ({ name: s.name, phone: s.phone! }));
+
+      if (added.length > 0) {
+        await sendStockAddedEmail(subscribers, added);
+        if (smsRecipients.length > 0) await sendStockAddedSms(smsRecipients, added);
+      }
+      if (wentInStock.length > 0) {
+        await sendBackInStockEmail(subscribers, wentInStock);
+        if (smsRecipients.length > 0) await sendBackInStockSms(smsRecipients, wentInStock);
+      }
     }
   }
 

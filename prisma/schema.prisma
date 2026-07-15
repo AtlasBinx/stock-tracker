@@ -68,6 +68,7 @@ model Subscriber {
   planStatus           String?        // active | cancelled | expired
   accessExpiresAt      DateTime?
   promoCode            String?
+  smsConsent           Boolean        @default(false)
 
   affiliateUses        AffiliateUse[]
 }

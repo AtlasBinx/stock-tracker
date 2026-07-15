@@ -21,7 +21,7 @@ export const stripe = new Proxy({} as Stripe, {
 export const PLANS = {
   monthly: {
     name: "Monthly",
-    price: 2.99,
+    price: 4.99,
     priceEnvKey: "STRIPE_PRICE_MONTHLY",
     billing: "monthly",
     renews: true,
@@ -31,7 +31,7 @@ export const PLANS = {
   },
   "3month": {
     name: "3-Month Pass",
-    price: 7.99,
+    price: 13.99,
     priceEnvKey: "STRIPE_PRICE_3MONTH",
     billing: "3 months",
     renews: false,
@@ -41,7 +41,7 @@ export const PLANS = {
   },
   annual: {
     name: "Annual Pass",
-    price: 24.99,
+    price: 49.99,
     priceEnvKey: "STRIPE_PRICE_ANNUAL",
     billing: "12 months",
     renews: false,
