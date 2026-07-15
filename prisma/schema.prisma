@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model GuitarProduct {
+  id          Int      @id @default(autoincrement())
+  shopifyId   String   @unique  // Shopify product ID
+  title       String
+  handle      String            // URL slug
+  sku         String?
+  price       String?
+  available   Boolean  @default(false)
+  active      Boolean  @default(true)  // false = removed from store
+  firstSeen   DateTime @default(now())
+  lastSeen    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  events      GuitarEvent[]
+}
+
+model GuitarEvent {
+  id        Int              @id @default(autoincrement())
+  productId Int
+  product   GuitarProduct    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      GuitarEventType
+  createdAt DateTime         @default(now())
+
+  @@index([productId, createdAt])
+  @@index([createdAt])
+}
+
+model SyncRun {
+  id           Int      @id @default(autoincrement())
+  checkedAt    DateTime @default(now())
+  totalProducts Int
+  added        Int      @default(0)
+  removed      Int      @default(0)
+  wentInStock  Int      @default(0)
+  wentOutOfStock Int    @default(0)
+}
+
+enum GuitarEventType {
+  ADDED
+  REMOVED
+  WENT_IN_STOCK
+  WENT_OUT_OF_STOCK
+}
+
+model Subscriber {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
