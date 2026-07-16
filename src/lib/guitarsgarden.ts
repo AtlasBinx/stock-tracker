@@ -35,8 +35,7 @@ export interface SyncSummary {
 async function fetchProducts(): Promise<ShopifyProduct[]> {
   const res = await fetch(STORE_URL, {
     headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(20_000),
-    // Skip cache so we always get live data
+    signal: AbortSignal.timeout(8_000),
     cache: "no-store",
   });
 
@@ -52,6 +51,10 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
   try {
     liveProducts = await fetchProducts();
   } catch (err) {
+    // Log the failed attempt so the dashboard timestamp still updates
+    await db.syncRun.create({
+      data: { totalProducts: 0, added: 0, removed: 0, wentInStock: 0, wentOutOfStock: 0 },
+    });
     return {
       totalProducts: 0,
       added: [],
@@ -61,6 +64,12 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
       error: err instanceof Error ? err.message : String(err),
     };
   }
+
+  // Write the sync record immediately after fetching so the timestamp is saved
+  // even if Vercel's function timeout cuts the rest of the work short.
+  await db.syncRun.create({
+    data: { totalProducts: liveProducts.length, added: 0, removed: 0, wentInStock: 0, wentOutOfStock: 0 },
+  });
 
   // Build a map of what the store has right now
   const liveMap = new Map<string, ShopifyProduct>();
@@ -189,17 +198,6 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
       }
     }
   }
-
-  // Log the sync run
-  await db.syncRun.create({
-    data: {
-      totalProducts: liveProducts.length,
-      added: added.length,
-      removed: removed.length,
-      wentInStock: wentInStock.length,
-      wentOutOfStock: wentOutOfStock.length,
-    },
-  });
 
   return {
     totalProducts: liveProducts.length,
