@@ -24,6 +24,9 @@ interface Subscriber {
   phone: string | null;
   active: boolean;
   createdAt: string;
+  plan: string | null;
+  planStatus: string | null;
+  accessExpiresAt: string | null;
 }
 
 interface GuitarEvent {
@@ -490,6 +493,18 @@ function LoadingSpinner() {
   );
 }
 
+const PLAN_LABELS: Record<string, string> = {
+  monthly: "Monthly",
+  "3month": "3-Month",
+  annual: "Annual",
+};
+
+const STATUS_STYLES: Record<string, { label: string; classes: string }> = {
+  active:    { label: "Active",    classes: "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30" },
+  cancelled: { label: "Cancelled", classes: "bg-red-500/10 text-red-400 ring-red-500/30" },
+  expired:   { label: "Expired",   classes: "bg-amber-500/10 text-amber-400 ring-amber-500/30" },
+};
+
 function SubscriberTable({
   subscribers,
   onRemove,
@@ -513,42 +528,62 @@ function SubscriberTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)" }}>
+    <div className="overflow-x-auto overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)" }}>
       <table className="w-full text-sm">
         <thead>
           <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
-            {["Name", "Email", "Phone", "Signed up", ""].map((h) => (
-              <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            {["Name", "Email", "Phone", "Plan", "Status", "Expires", "Signed up", ""].map((h) => (
+              <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
                 {h}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {active.map((s, i) => (
-            <tr
-              key={s.id}
-              style={{
-                backgroundColor: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)",
-                borderBottom: i < active.length - 1 ? "1px solid var(--border)" : undefined,
-              }}
-            >
-              <td className="px-4 py-3 font-medium">{s.name}</td>
-              <td className="px-4 py-3 text-indigo-400">{s.email}</td>
-              <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{s.phone ?? "—"}</td>
-              <td className="px-4 py-3 tabular-nums" style={{ color: "var(--text-muted)" }}>
-                {new Date(s.createdAt).toLocaleDateString()}
-              </td>
-              <td className="px-4 py-3">
-                <button
-                  onClick={() => onRemove(s.id)}
-                  className="rounded-md px-2.5 py-1 text-xs font-medium text-red-400 ring-1 ring-red-500/40 hover:bg-red-500/10 transition"
-                >
-                  Remove
-                </button>
-              </td>
-            </tr>
-          ))}
+          {active.map((s, i) => {
+            const statusStyle = STATUS_STYLES[s.planStatus ?? ""] ?? { label: s.planStatus ?? "—", classes: "bg-gray-500/10 text-gray-400 ring-gray-500/30" };
+            return (
+              <tr
+                key={s.id}
+                style={{
+                  backgroundColor: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)",
+                  borderBottom: i < active.length - 1 ? "1px solid var(--border)" : undefined,
+                }}
+              >
+                <td className="px-4 py-3 font-medium whitespace-nowrap">{s.name}</td>
+                <td className="px-4 py-3 text-indigo-400 whitespace-nowrap">{s.email}</td>
+                <td className="px-4 py-3 whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{s.phone ?? "—"}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {s.plan ? (
+                    <span className="inline-flex items-center rounded-full bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-300 ring-1 ring-inset ring-indigo-500/30">
+                      {PLAN_LABELS[s.plan] ?? s.plan}
+                    </span>
+                  ) : "—"}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {s.planStatus ? (
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${statusStyle.classes}`}>
+                      {statusStyle.label}
+                    </span>
+                  ) : "—"}
+                </td>
+                <td className="px-4 py-3 tabular-nums whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                  {s.accessExpiresAt ? new Date(s.accessExpiresAt).toLocaleDateString() : s.plan === "monthly" ? "∞" : "—"}
+                </td>
+                <td className="px-4 py-3 tabular-nums whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
+                  {new Date(s.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => onRemove(s.id)}
+                    className="rounded-md px-2.5 py-1 text-xs font-medium text-red-400 ring-1 ring-red-500/40 hover:bg-red-500/10 transition"
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
