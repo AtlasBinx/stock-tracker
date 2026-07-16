@@ -297,6 +297,8 @@ export default function PricingPage() {
         </p>
         <p className="mt-3 text-center text-xs" style={{ color: "var(--text-muted)" }}>
           <a href="/privacy" className="text-indigo-400 hover:underline">Privacy Policy</a>
+          {" · "}
+          <a href="/terms" className="text-indigo-400 hover:underline">Terms of Service</a>
           {" · "}SMS opt-in data is never shared with third parties for marketing purposes.
         </p>
       </div>
