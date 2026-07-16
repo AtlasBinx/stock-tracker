@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { sendPurchaseConfirmationEmail } from "@/lib/mailer";
+import { sendSmsOptInConfirmation } from "@/lib/sms";
 import type Stripe from "stripe";
 
 const BOUNTIES: Record<string, number> = { monthly: 1.5, "3month": 3.0, annual: 6.0 };
@@ -109,6 +110,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   await sendPurchaseConfirmationEmail({ name, email }, plan, amountPaid, accessExpiresAt);
+
+  // Send SMS opt-in confirmation if subscriber consented and has a phone number
+  if (smsConsent === "true" && phone) {
+    await sendSmsOptInConfirmation(phone);
+  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {

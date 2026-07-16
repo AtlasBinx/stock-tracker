@@ -39,6 +39,18 @@ async function sendSms(to: string, body: string): Promise<void> {
   }
 }
 
+export async function sendSmsOptInConfirmation(phone: string): Promise<void> {
+  const config = getTwilioConfig();
+  if (!config) return;
+
+  const body =
+    "Guitars Garden Alerts: You're now subscribed to stock alerts. " +
+    "Msg frequency varies. Msg & data rates may apply. " +
+    "Reply STOP to cancel, HELP for help.";
+
+  await sendSms(phone, body);
+}
+
 export async function sendStockAddedSms(
   recipients: SmsRecipient[],
   addedProducts: string[]
