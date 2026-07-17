@@ -173,14 +173,23 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
-        >
-          <RefreshIcon spinning={syncing} />
-          {syncing ? "Syncing…" : "Sync Now"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
+          >
+            <RefreshIcon spinning={syncing} />
+            {syncing ? "Syncing…" : "Sync Now"}
+          </button>
+          <button
+            onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; }}
+            className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-400 ring-1 transition hover:text-white"
+            style={{ border: "1px solid var(--border)" }}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       {/* ── Sync result flash ── */}
