@@ -24,8 +24,6 @@ export default function PricingPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!agreed) { setErrorMsg("Please agree to the billing terms before continuing."); return; }
-    if (!smsConsent) { setErrorMsg("Please agree to receive SMS alerts — they're included with every plan."); return; }
-    if (!form.phone) { setErrorMsg("A phone number is required to receive SMS alerts."); return; }
     setStatus("loading");
     setErrorMsg("");
 
@@ -87,7 +85,8 @@ export default function PricingPage() {
           <p className="text-4xl">🎸</p>
           <h1 className="mt-3 text-3xl font-bold">Guitars Garden Stock Alerts</h1>
           <p className="mt-2" style={{ color: "var(--text-muted)" }}>
-            Get an email <strong className="text-white">and text message</strong> the moment new guitars hit the store.
+            Get an <strong className="text-white">email alert</strong> the moment new guitars hit the store.
+            SMS alerts available as an optional add-on during signup.
           </p>
         </div>
 
@@ -126,7 +125,7 @@ export default function PricingPage() {
                     ✓ One-time charge · Never auto-renews
                   </p>
                 )}
-                <p className="mt-1 text-xs text-indigo-300">✓ Email + SMS alerts included</p>
+                <p className="mt-1 text-xs text-indigo-300">✓ Email alerts included</p>
               </button>
             );
           })}
@@ -195,11 +194,10 @@ export default function PricingPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-300">
-                    Phone <span className="text-red-400">*</span>
-                    <span className="ml-1 text-xs font-normal" style={{ color: "var(--text-muted)" }}>(for SMS alerts)</span>
+                    Phone{" "}
+                    <span className="text-xs font-normal" style={{ color: "var(--text-muted)" }}>(optional — for SMS alerts only)</span>
                   </label>
                   <input
-                    required
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -232,11 +230,11 @@ export default function PricingPage() {
                     : <li>• This is a one-time charge. Your access ends after {plan.billing} with <strong className="text-emerald-400">no automatic renewal and no future charges.</strong></li>
                   }
                   <li>• Cancel or manage your subscription anytime at <span className="text-indigo-400">stock-tracker-seven-delta.vercel.app/account</span></li>
-                  <li>• Email and SMS alerts sent to your contact info only.</li>
+                  <li>• Email alerts sent to your address. SMS alerts sent only if you opt in below.</li>
                 </ul>
               </div>
 
-              {/* Billing consent */}
+              {/* Billing consent — required */}
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -249,21 +247,25 @@ export default function PricingPage() {
                 </span>
               </label>
 
-              {/* SMS / TCPA consent */}
+              {/* SMS / TCPA consent — optional */}
               <div className="rounded-xl p-4" style={{ backgroundColor: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}>
+                <p className="mb-3 text-xs font-semibold text-indigo-300 uppercase tracking-wide">SMS Alerts — Optional</p>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={smsConsent}
-                    onChange={(e) => setSmsConsent(e.target.checked)}
+                    onChange={(e) => {
+                      setSmsConsent(e.target.checked);
+                      if (!e.target.checked) setForm((f) => ({ ...f, phone: "" }));
+                    }}
                     className="mt-0.5 h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
                   />
                   <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-                    I agree to receive automated SMS stock alert messages from Guitars Garden Alerts at the phone number I provided.
-                    Message frequency varies based on store activity (typically a few times per month).
-                    <strong className="text-white"> Message and data rates may apply.</strong>{" "}
-                    Reply <strong className="text-white">STOP</strong> at any time to opt out of texts.
-                    Opting out of SMS does not cancel your subscription.
+                    <strong className="text-white">Yes, I want SMS alerts</strong> — I agree to receive automated text messages from Guitar Stock Alert at the phone number I provided above.
+                    Message frequency varies based on store activity (typically a few times per month).{" "}
+                    <strong className="text-white">Msg &amp; data rates may apply.</strong>{" "}
+                    Reply <strong className="text-white">STOP</strong> to opt out at any time.
+                    SMS consent is not required to use this service — you will receive email alerts regardless.
                   </span>
                 </label>
               </div>
@@ -276,7 +278,7 @@ export default function PricingPage() {
 
               <button
                 type="submit"
-                disabled={status === "loading" || !agreed || !smsConsent}
+                disabled={status === "loading" || !agreed}
                 className="w-full rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50"
               >
                 {status === "loading" ? "Redirecting to checkout…" : `Subscribe — $${plan.price} / ${plan.billing}`}
@@ -299,7 +301,11 @@ export default function PricingPage() {
           <a href="/privacy" className="text-indigo-400 hover:underline">Privacy Policy</a>
           {" · "}
           <a href="/terms" className="text-indigo-400 hover:underline">Terms of Service</a>
-          {" · "}SMS opt-in data is never shared with third parties for marketing purposes.
+          {" · "}
+          <a href="/sms-optin" className="text-indigo-400 hover:underline">SMS opt-in</a>
+        </p>
+        <p className="mt-2 text-center text-xs" style={{ color: "var(--text-muted)" }}>
+          SMS opt-in is optional and not required to purchase or use this service.
         </p>
       </div>
     </div>

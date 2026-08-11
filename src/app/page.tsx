@@ -59,7 +59,20 @@ interface SyncResult {
 
 const STORE_BASE = "https://guitarsgarden.com/products";
 const REFRESH_MS = 60_000;
-type Tab = "catalog" | "subscribers";
+type Tab = "catalog" | "subscribers" | "affiliates";
+
+interface PeriodStats { subs: number; revenue: number; bounty: number }
+interface AffiliateReport {
+  id: number;
+  code: string;
+  creatorName: string;
+  active: boolean;
+  createdAt: string;
+  weekly: PeriodStats;
+  monthly: PeriodStats;
+  ytd: PeriodStats;
+  allTime: PeriodStats;
+}
 
 const EVENT_CONFIG = {
   ADDED:            { label: "Added to store",    color: "text-emerald-400", bg: "bg-emerald-500/10 ring-emerald-500/30", dot: "bg-emerald-400" },
@@ -75,6 +88,7 @@ export default function DashboardPage() {
   const [events, setEvents]         = useState<GuitarEvent[]>([]);
   const [syncs, setSyncs]           = useState<SyncRun[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [affiliates, setAffiliates] = useState<AffiliateReport[]>([]);
   const [filter, setFilter]         = useState<"all" | "available" | "unavailable" | "removed">("all");
   const [tab, setTab]               = useState<Tab>("catalog");
   const [syncing, setSyncing]       = useState(false);
@@ -84,17 +98,19 @@ export default function DashboardPage() {
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
   const fetchAll = useCallback(async () => {
-    const [pRes, eRes, sRes, subRes] = await Promise.all([
+    const [pRes, eRes, sRes, subRes, affRes] = await Promise.all([
       fetch(`/api/guitars?filter=${filter}`),
       fetch("/api/guitars/events?limit=80"),
       fetch("/api/guitars/syncs"),
       fetch("/api/subscribe"),
+      fetch("/api/affiliates"),
     ]);
-    const [p, e, s, sub] = await Promise.all([pRes.json(), eRes.json(), sRes.json(), subRes.json()]);
+    const [p, e, s, sub, aff] = await Promise.all([pRes.json(), eRes.json(), sRes.json(), subRes.json(), affRes.json()]);
     setProducts(p);
     setEvents(e);
     setSyncs(s);
     setSubscribers(Array.isArray(sub) ? sub : []);
+    setAffiliates(Array.isArray(aff) ? aff : []);
     setLoading(false);
   }, [filter]);
 
@@ -114,10 +130,14 @@ export default function DashboardPage() {
     setSubscribers((prev) => prev.filter((s) => s.id !== id));
   }
 
-  async function handleTestEmail() {
+  async function handleTestEmail(recipientEmails?: string[]) {
     setTestEmailStatus("sending");
     try {
-      const res = await fetch("/api/test-email", { method: "POST" });
+      const res = await fetch("/api/test-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipientEmails }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setTestEmailStatus("sent");
@@ -207,7 +227,7 @@ export default function DashboardPage() {
 
       {/* ── Tabs ── */}
       <div className="mb-6 flex gap-1 border-b" style={{ borderColor: "var(--border)" }}>
-        {(["catalog", "subscribers"] as Tab[]).map((t) => (
+        {(["catalog", "subscribers", "affiliates"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -219,6 +239,8 @@ export default function DashboardPage() {
           >
             {t === "subscribers"
               ? `Subscribers (${subscribers.filter((s) => s.active).length})`
+              : t === "affiliates"
+              ? `Affiliates (${affiliates.length})`
               : "Catalog"}
           </button>
         ))}
@@ -231,22 +253,15 @@ export default function DashboardPage() {
         </a>
       </div>
 
-      {tab === "subscribers" ? (
-        <div>
-          <div className="mb-4 flex items-center justify-end">
-            <button
-              onClick={handleTestEmail}
-              disabled={testEmailStatus === "sending"}
-              className="rounded-lg px-4 py-2 text-sm font-medium ring-1 transition disabled:opacity-50"
-              style={{
-                backgroundColor: testEmailStatus === "sent" ? "rgba(16,185,129,0.1)" : testEmailStatus === "error" ? "rgba(239,68,68,0.1)" : "var(--surface)",
-                color: testEmailStatus === "sent" ? "#34d399" : testEmailStatus === "error" ? "#f87171" : "var(--text-muted)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              {testEmailStatus === "sending" ? "Sending…" : testEmailStatus === "sent" ? "✓ Test email sent!" : testEmailStatus === "error" ? "✕ Failed — check console" : "Send Test Email"}
-            </button>
-          </div>
+      {tab === "affiliates" ? (
+        <AffiliatesTab affiliates={affiliates} onRefresh={fetchAll} />
+      ) : tab === "subscribers" ? (
+        <div className="space-y-6">
+          <MessagingPanel
+            testStatus={testEmailStatus}
+            onTest={handleTestEmail}
+            subscribers={subscribers.filter((s) => s.active)}
+          />
           <SubscriberTable subscribers={subscribers} onRemove={handleUnsubscribe} />
         </div>
       ) : (
@@ -504,7 +519,7 @@ function LoadingSpinner() {
 
 const PLAN_LABELS: Record<string, string> = {
   monthly: "Monthly",
-  "3month": "3-Month",
+  "30day": "30-Day",
   annual: "Annual",
 };
 
@@ -595,6 +610,323 @@ function SubscriberTable({
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function MessagingPanel({
+  testStatus,
+  onTest,
+  subscribers,
+}: {
+  testStatus: "idle" | "sending" | "sent" | "error";
+  onTest: (recipientEmails?: string[]) => void;
+  subscribers: Subscriber[];
+}) {
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [sendEmail, setSendEmail] = useState(true);
+  const [sendSms, setSendSms] = useState(true);
+  const [broadcastStatus, setBroadcastStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [broadcastResult, setBroadcastResult] = useState("");
+  // "all" or a subscriber id string
+  const [testTarget, setTestTarget] = useState("all");
+  const [broadcastTarget, setBroadcastTarget] = useState("all");
+
+  const activeCount = subscribers.length;
+
+  function selectedTestEmails(): string[] | undefined {
+    if (testTarget === "all") return undefined;
+    const sub = subscribers.find((s) => String(s.id) === testTarget);
+    return sub ? [sub.email] : undefined;
+  }
+
+  function selectedBroadcastIds(): number[] | undefined {
+    if (broadcastTarget === "all") return undefined;
+    const id = parseInt(broadcastTarget);
+    return isNaN(id) ? undefined : [id];
+  }
+
+  function broadcastLabel() {
+    if (broadcastTarget === "all") return `Broadcast to ${activeCount}`;
+    const sub = subscribers.find((s) => String(s.id) === broadcastTarget);
+    return `Send to ${sub?.name ?? "selected"}`;
+  }
+
+  async function handleBroadcast(e: React.FormEvent) {
+    e.preventDefault();
+    const label = broadcastTarget === "all" ? `all ${activeCount} active subscribers` : subscribers.find((s) => String(s.id) === broadcastTarget)?.name ?? "selected subscriber";
+    if (!confirm(`Send this message to ${label}?`)) return;
+    setBroadcastStatus("sending");
+    setBroadcastResult("");
+    try {
+      const res = await fetch("/api/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, message, sendEmail, sendSms, recipientIds: selectedBroadcastIds() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setBroadcastResult(`✓ Sent — ${data.emailsSent} emails, ${data.smsSent} texts`);
+      setBroadcastStatus("sent");
+      setSubject("");
+      setMessage("");
+      setTimeout(() => { setBroadcastStatus("idle"); setBroadcastResult(""); }, 6000);
+    } catch (err) {
+      setBroadcastResult(`✕ Failed: ${err}`);
+      setBroadcastStatus("error");
+      setTimeout(() => { setBroadcastStatus("idle"); setBroadcastResult(""); }, 6000);
+    }
+  }
+
+  return (
+    <div className="rounded-xl p-5 space-y-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+      <h2 className="font-semibold">Messaging</h2>
+
+      {/* Test send row */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Test to:</span>
+        <select
+          value={testTarget}
+          onChange={(e) => setTestTarget(e.target.value)}
+          className="rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:ring-2 focus:ring-indigo-500"
+          style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
+        >
+          <option value="all">All subscribers</option>
+          {subscribers.map((s) => (
+            <option key={s.id} value={String(s.id)}>{s.name} ({s.email})</option>
+          ))}
+        </select>
+        <button
+          onClick={() => onTest(selectedTestEmails())}
+          disabled={testStatus === "sending"}
+          className="rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition disabled:opacity-50"
+          style={{
+            backgroundColor: testStatus === "sent" ? "rgba(16,185,129,0.1)" : testStatus === "error" ? "rgba(239,68,68,0.1)" : "transparent",
+            color: testStatus === "sent" ? "#34d399" : testStatus === "error" ? "#f87171" : "var(--text-muted)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          {testStatus === "sending" ? "Sending…" : testStatus === "sent" ? "✓ Test sent!" : testStatus === "error" ? "✕ Failed" : "Send Test (Email + SMS)"}
+        </button>
+      </div>
+
+      <div style={{ borderTop: "1px solid var(--border)" }} />
+
+      {/* Broadcast form */}
+      <form onSubmit={handleBroadcast} className="space-y-3">
+        <div>
+          <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>Email subject</label>
+          <input
+            required={sendEmail}
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="🎸 Important update from Guitar Stock Alert"
+            className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+            style={{ backgroundColor: "var(--surface-2)" }}
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs" style={{ color: "var(--text-muted)" }}>Message body</label>
+          <textarea
+            required
+            rows={4}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Write your message here. For SMS this will be prefixed with 'Guitar Stock Alert:' and suffixed with 'Reply STOP to opt out.'"
+            className="w-full rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            style={{ backgroundColor: "var(--surface-2)" }}
+          />
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Send to:</span>
+          <select
+            value={broadcastTarget}
+            onChange={(e) => setBroadcastTarget(e.target.value)}
+            className="rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:ring-2 focus:ring-indigo-500"
+            style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
+          >
+            <option value="all">All active subscribers ({activeCount})</option>
+            {subscribers.map((s) => (
+              <option key={s.id} value={String(s.id)}>{s.name} ({s.email})</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--text-muted)" }}>
+              <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="h-4 w-4 rounded" />
+              Email
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "var(--text-muted)" }}>
+              <input type="checkbox" checked={sendSms} onChange={(e) => setSendSms(e.target.checked)} className="h-4 w-4 rounded" />
+              SMS
+            </label>
+          </div>
+          <div className="flex items-center gap-3">
+            {broadcastResult && (
+              <span className={`text-sm ${broadcastStatus === "sent" ? "text-emerald-400" : "text-red-400"}`}>
+                {broadcastResult}
+              </span>
+            )}
+            <button
+              type="submit"
+              disabled={broadcastStatus === "sending" || (!sendEmail && !sendSms)}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition"
+            >
+              {broadcastStatus === "sending" ? "Sending…" : broadcastLabel()}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[]; onRefresh: () => void }) {
+  const [newCode, setNewCode] = useState({ code: "", creatorName: "" });
+  const [creating, setCreating] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [period, setPeriod] = useState<"weekly" | "monthly" | "ytd" | "allTime">("monthly");
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    setMsg("");
+    const res = await fetch("/api/admin/affiliates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newCode),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setMsg(`✓ Created ${data.code}`);
+      setNewCode({ code: "", creatorName: "" });
+      onRefresh();
+    } else {
+      setMsg(`Error: ${data.error}`);
+    }
+    setCreating(false);
+  }
+
+  const totals = affiliates.reduce(
+    (acc, a) => ({
+      subs: acc.subs + a[period].subs,
+      revenue: acc.revenue + a[period].revenue,
+      bounty: acc.bounty + a[period].bounty,
+    }),
+    { subs: 0, revenue: 0, bounty: 0 }
+  );
+
+  const periodLabel = { weekly: "This Week", monthly: "This Month", ytd: "Year to Date", allTime: "All Time" };
+
+  return (
+    <div className="space-y-6">
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Referrals ({periodLabel[period]})</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums text-indigo-400">{totals.subs}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Revenue ({periodLabel[period]})</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums text-emerald-400">${totals.revenue.toFixed(2)}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Bounty Owed ({periodLabel[period]})</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums text-amber-400">${totals.bounty.toFixed(2)}</p>
+        </div>
+      </div>
+
+      {/* Period selector + table */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-semibold">Creator Breakdown</h2>
+          <div className="flex gap-1">
+            {(["weekly", "monthly", "ytd", "allTime"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                  period === p ? "bg-indigo-600 text-white" : "text-gray-400 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {periodLabel[p]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {affiliates.length === 0 ? (
+          <EmptyState message="No referral codes yet — create one below" />
+        ) : (
+          <div className="overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
+                    {["Creator", "Code", "Subs", "Revenue", "Bounty Owed", "Status"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {affiliates.map((a, i) => (
+                    <tr key={a.id} style={{ backgroundColor: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)", borderBottom: i < affiliates.length - 1 ? "1px solid var(--border)" : undefined }}>
+                      <td className="px-4 py-3 font-medium whitespace-nowrap">{a.creatorName}</td>
+                      <td className="px-4 py-3 font-mono text-indigo-400">{a.code}</td>
+                      <td className="px-4 py-3 tabular-nums">{a[period].subs}</td>
+                      <td className="px-4 py-3 tabular-nums text-emerald-400">${a[period].revenue.toFixed(2)}</td>
+                      <td className="px-4 py-3 tabular-nums text-amber-400">${a[period].bounty.toFixed(2)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${a.active ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30" : "bg-red-500/10 text-red-400 ring-red-500/30"}`}>
+                          {a.active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Create new code */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+        <h2 className="mb-3 text-sm font-semibold">Create new referral code</h2>
+        <form onSubmit={handleCreate} className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="mb-1 block text-xs text-gray-400">Code</label>
+            <input
+              required
+              value={newCode.code}
+              onChange={(e) => setNewCode((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
+              placeholder="SARAH"
+              className="rounded-lg px-3 py-2 text-sm font-mono text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{ backgroundColor: "var(--surface-2)" }}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-400">Creator name</label>
+            <input
+              required
+              value={newCode.creatorName}
+              onChange={(e) => setNewCode((f) => ({ ...f, creatorName: e.target.value }))}
+              placeholder="Sarah Smith"
+              className="rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{ backgroundColor: "var(--surface-2)" }}
+            />
+          </div>
+          <button type="submit" disabled={creating} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50">
+            {creating ? "Creating…" : "Create"}
+          </button>
+          {msg && <p className={`text-sm ${msg.startsWith("✓") ? "text-emerald-400" : "text-red-400"}`}>{msg}</p>}
+        </form>
+        <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
+          Tracking only — no discount is applied to the subscriber. Share as a typed code or link: <span className="text-indigo-400">/signup?ref=CODE</span>
+        </p>
+      </div>
     </div>
   );
 }

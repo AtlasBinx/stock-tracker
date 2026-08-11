@@ -12,9 +12,6 @@ export async function POST(req: NextRequest) {
     if (!name || !email) {
       return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
     }
-    if (!phone) {
-      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
-    }
 
     const planKey = plan as PlanKey;
     const planConfig = PLANS[planKey];
@@ -42,15 +39,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Resolve promo code to a Stripe Promotion Code ID if provided
-    let discounts: { promotion_code: string }[] | undefined;
-    let allowPromoCodes = true;
+    // Validate promo code against our DB (tracking only — no Stripe discount applied)
+    let validatedPromoCode = "";
     if (promoCode) {
-      const codes = await stripe.promotionCodes.list({ code: promoCode, active: true, limit: 1 });
-      if (codes.data.length > 0) {
-        discounts = [{ promotion_code: codes.data[0].id }];
-        allowPromoCodes = false;
-      }
+      const upper = promoCode.toUpperCase();
+      const found = await db.affiliateCode.findUnique({ where: { code: upper } });
+      if (found?.active) validatedPromoCode = upper;
     }
 
     // Include PayPal if enabled in Stripe Dashboard — falls back gracefully if not
@@ -68,7 +62,7 @@ export async function POST(req: NextRequest) {
         plan: planKey,
         name,
         phone: phone ?? "",
-        promoCode: promoCode ?? "",
+        promoCode: validatedPromoCode,
         smsConsent: smsConsent ? "true" : "false",
       },
       subscription_data: {
@@ -77,7 +71,7 @@ export async function POST(req: NextRequest) {
       },
       success_url: `${BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/signup`,
-      ...(discounts ? { discounts } : { allow_promotion_codes: allowPromoCodes }),
+      allow_promotion_codes: false,
     };
 
     const session = await stripe.checkout.sessions.create(sessionParams);

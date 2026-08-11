@@ -19,35 +19,35 @@ export const stripe = new Proxy({} as Stripe, {
 });
 
 export const PLANS = {
+  "30day": {
+    name: "30-Day Pass",
+    price: 9.99,
+    priceEnvKey: "STRIPE_PRICE_30DAY",
+    billing: "30 days",
+    renews: false,
+    cancelAtPeriodEnd: true,
+    bounty: 2.5,
+    tagline: "One charge for 30 days · Never auto-renews · No surprise charges",
+  },
   monthly: {
     name: "Monthly",
-    price: 4.99,
+    price: 7.99,
     priceEnvKey: "STRIPE_PRICE_MONTHLY",
     billing: "monthly",
     renews: true,
     cancelAtPeriodEnd: false,
-    bounty: 1.5,
+    bounty: 2.0,
     tagline: "Billed monthly · Cancel anytime · Keeps access through paid period",
-  },
-  "3month": {
-    name: "3-Month Pass",
-    price: 13.99,
-    priceEnvKey: "STRIPE_PRICE_3MONTH",
-    billing: "3 months",
-    renews: false,
-    cancelAtPeriodEnd: true,
-    bounty: 3.0,
-    tagline: "One charge for 3 months · Never auto-renews · No surprise charges",
   },
   annual: {
     name: "Annual Pass",
-    price: 49.99,
+    price: 79.99,
     priceEnvKey: "STRIPE_PRICE_ANNUAL",
     billing: "12 months",
     renews: false,
     cancelAtPeriodEnd: true,
-    bounty: 6.0,
-    tagline: "One charge for 12 months · Never auto-renews · No surprise charges",
+    bounty: 10.0,
+    tagline: "Just $6.67/mo · Save $15.89 vs monthly · One charge, never auto-renews",
   },
 } as const;
 

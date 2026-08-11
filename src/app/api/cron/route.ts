@@ -15,16 +15,17 @@ export async function GET(req: Request) {
   // Sync products
   const result = await syncGuitarsGarden();
 
-  // Send expiry reminders to subscribers whose access ends in 5–7 days
+  // Send expiry reminders to subscribers whose access ends in 2–4 days (haven't been sent one yet)
   const now = new Date();
-  const in5Days = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
-  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const in2Days = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const in4Days = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
 
   const expiring = await db.subscriber.findMany({
     where: {
       active: true,
-      planStatus: "active",
-      accessExpiresAt: { gte: in5Days, lte: in7Days },
+      planStatus: { in: ["active", "cancelling"] },
+      accessExpiresAt: { gte: in2Days, lte: in4Days },
+      reminderSentAt: null,
     },
   });
 
@@ -34,6 +35,10 @@ export async function GET(req: Request) {
       sub.plan ?? "unknown",
       sub.accessExpiresAt!
     );
+    await db.subscriber.update({
+      where: { id: sub.id },
+      data: { reminderSentAt: now },
+    });
   }
 
   return NextResponse.json({

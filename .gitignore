@@ -54,3 +54,4 @@ check-db.mjs
 migrate-turso.mjs
 
 .vercel
+.env*

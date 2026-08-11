@@ -2,29 +2,30 @@
 
 import { useEffect, useState } from "react";
 
+interface PeriodStats { subs: number; revenue: number; bounty: number }
 interface AffiliateReport {
+  id: number;
   code: string;
   creatorName: string;
   active: boolean;
-  totalUses: number;
-  byPlan: { monthly: number; "3month": number; annual: number };
-  totalRevenue: number;
-  totalBounty: number;
   createdAt: string;
+  weekly: PeriodStats;
+  monthly: PeriodStats;
+  ytd: PeriodStats;
+  allTime: PeriodStats;
 }
 
 export default function AffiliatesPage() {
   const [report, setReport] = useState<AffiliateReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newCode, setNewCode] = useState({ code: "", creatorName: "", discountPercent: "10" });
+  const [newCode, setNewCode] = useState({ code: "", creatorName: "" });
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState("");
 
-  useEffect(() => {
-    fetch("/api/admin/affiliates")
-      .then((r) => r.json())
-      .then((d) => { setReport(d); setLoading(false); });
-  }, []);
+  const load = () =>
+    fetch("/api/admin/affiliates").then((r) => r.json()).then((d) => { setReport(d); setLoading(false); });
+
+  useEffect(() => { load(); }, []);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -33,34 +34,32 @@ export default function AffiliatesPage() {
     const res = await fetch("/api/admin/affiliates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newCode, discountPercent: Number(newCode.discountPercent) }),
+      body: JSON.stringify(newCode),
     });
     const data = await res.json();
     if (res.ok) {
       setCreateMsg(`✓ Created code ${data.code}`);
-      setNewCode({ code: "", creatorName: "", discountPercent: "10" });
-      const updated = await fetch("/api/admin/affiliates").then((r) => r.json());
-      setReport(updated);
+      setNewCode({ code: "", creatorName: "" });
+      load();
     } else {
       setCreateMsg(`Error: ${data.error}`);
     }
     setCreating(false);
   }
 
-  const totalRevenue = report.reduce((s, r) => s + r.totalRevenue, 0);
-  const totalBounty = report.reduce((s, r) => s + r.totalBounty, 0);
+  const totalRevenue = report.reduce((s, r) => s + r.allTime.revenue, 0);
+  const totalBounty = report.reduce((s, r) => s + r.allTime.bounty, 0);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-2 text-2xl font-bold">Affiliate Codes</h1>
+      <h1 className="mb-2 text-2xl font-bold">Affiliate / Referral Codes</h1>
       <p className="mb-8 text-sm" style={{ color: "var(--text-muted)" }}>
-        Total revenue via codes: <strong className="text-white">${totalRevenue.toFixed(2)}</strong> ·
+        All-time revenue via codes: <strong className="text-white">${totalRevenue.toFixed(2)}</strong> ·
         Total bounty owed: <strong className="text-amber-400">${totalBounty.toFixed(2)}</strong>
       </p>
 
-      {/* Create new code */}
       <div className="mb-8 rounded-xl p-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-        <h2 className="mb-4 font-semibold">Create new affiliate code</h2>
+        <h2 className="mb-4 font-semibold">Create new referral code</h2>
         <form onSubmit={handleCreate} className="flex flex-wrap gap-3 items-end">
           <div>
             <label className="mb-1 block text-xs text-gray-400">Code</label>
@@ -68,7 +67,7 @@ export default function AffiliatesPage() {
               required
               value={newCode.code}
               onChange={(e) => setNewCode((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
-              placeholder="SARAH10"
+              placeholder="SARAH"
               className="rounded-lg px-3 py-2 text-sm font-mono text-white outline-none focus:ring-2 focus:ring-indigo-500"
               style={{ backgroundColor: "var(--surface-2)" }}
             />
@@ -84,18 +83,6 @@ export default function AffiliatesPage() {
               style={{ backgroundColor: "var(--surface-2)" }}
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-gray-400">Discount %</label>
-            <input
-              type="number"
-              min="1"
-              max="100"
-              value={newCode.discountPercent}
-              onChange={(e) => setNewCode((f) => ({ ...f, discountPercent: e.target.value }))}
-              className="w-20 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
-              style={{ backgroundColor: "var(--surface-2)" }}
-            />
-          </div>
           <button
             type="submit"
             disabled={creating}
@@ -106,45 +93,36 @@ export default function AffiliatesPage() {
           {createMsg && <p className="text-sm text-emerald-400">{createMsg}</p>}
         </form>
         <p className="mt-3 text-xs" style={{ color: "var(--text-muted)" }}>
-          The code will be created in Stripe and restricted to first-time customers only. Share as a typed code or as a link: <span className="text-indigo-400">/signup?ref=CODE</span>
+          Tracking only — no discount applied to the subscriber. Share as a typed code or link: <span className="text-indigo-400">/signup?ref=CODE</span>
         </p>
       </div>
 
-      {/* Report table */}
       {loading ? (
         <p className="text-gray-400">Loading…</p>
       ) : report.length === 0 ? (
-        <p className="text-gray-400">No affiliate codes yet.</p>
+        <p className="text-gray-400">No referral codes yet.</p>
       ) : (
         <div className="overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
-                  {["Code", "Creator", "Uses", "Monthly", "3-Month", "Annual", "Revenue", "Bounty owed", "Status"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                      {h}
-                    </th>
+                  {["Code", "Creator", "Weekly subs", "Monthly subs", "YTD subs", "YTD revenue", "YTD bounty", "All-time rev", "Status"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {report.map((r, i) => (
-                  <tr
-                    key={r.code}
-                    style={{
-                      backgroundColor: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)",
-                      borderBottom: i < report.length - 1 ? "1px solid var(--border)" : undefined,
-                    }}
-                  >
+                  <tr key={r.code} style={{ backgroundColor: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)", borderBottom: i < report.length - 1 ? "1px solid var(--border)" : undefined }}>
                     <td className="px-4 py-3 font-mono font-semibold text-indigo-400">{r.code}</td>
-                    <td className="px-4 py-3">{r.creatorName}</td>
-                    <td className="px-4 py-3 tabular-nums">{r.totalUses}</td>
-                    <td className="px-4 py-3 tabular-nums">{r.byPlan.monthly}</td>
-                    <td className="px-4 py-3 tabular-nums">{r.byPlan["3month"]}</td>
-                    <td className="px-4 py-3 tabular-nums">{r.byPlan.annual}</td>
-                    <td className="px-4 py-3 tabular-nums text-emerald-400">${r.totalRevenue.toFixed(2)}</td>
-                    <td className="px-4 py-3 tabular-nums text-amber-400">${r.totalBounty.toFixed(2)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{r.creatorName}</td>
+                    <td className="px-4 py-3 tabular-nums">{r.weekly.subs}</td>
+                    <td className="px-4 py-3 tabular-nums">{r.monthly.subs}</td>
+                    <td className="px-4 py-3 tabular-nums">{r.ytd.subs}</td>
+                    <td className="px-4 py-3 tabular-nums text-emerald-400">${r.ytd.revenue.toFixed(2)}</td>
+                    <td className="px-4 py-3 tabular-nums text-amber-400">${r.ytd.bounty.toFixed(2)}</td>
+                    <td className="px-4 py-3 tabular-nums text-emerald-400">${r.allTime.revenue.toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.active ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
                         {r.active ? "Active" : "Inactive"}

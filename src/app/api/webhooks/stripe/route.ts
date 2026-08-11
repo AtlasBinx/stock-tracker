@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { sendPurchaseConfirmationEmail } from "@/lib/mailer";
-import { sendSmsOptInConfirmation } from "@/lib/sms";
+import { sendPurchaseConfirmationEmail, sendCancellationConfirmationEmail } from "@/lib/mailer";
+import { sendSmsOptInConfirmation, toE164 } from "@/lib/sms";
 import type Stripe from "stripe";
 
-const BOUNTIES: Record<string, number> = { monthly: 1.5, "3month": 3.0, annual: 6.0 };
+const BOUNTIES: Record<string, number> = { "30day": 2.5, monthly: 2.0, annual: 10.0 };
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -54,14 +54,15 @@ export async function POST(req: NextRequest) {
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (session.mode !== "subscription") return;
 
-  const { plan, name, phone, promoCode, smsConsent } = session.metadata ?? {};
+  const { plan, name, phone: rawPhone, promoCode, smsConsent } = session.metadata ?? {};
+  const phone = rawPhone ? toE164(rawPhone) : undefined;
   const email = session.customer_email ?? session.customer_details?.email;
   if (!email || !plan) return;
 
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
   const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
 
-  const isPrepaid = plan === "3month" || plan === "annual";
+  const isPrepaid = plan === "30day" || plan === "annual";
   const accessExpiresAt = isPrepaid ? currentPeriodEnd : null;
   const amountPaid = (session.amount_total ?? 0) / 100;
 
@@ -130,9 +131,33 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   });
   if (!sub) return;
 
-  if (subscription.status === "active") {
-    const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
-    const isPrepaid = sub.plan === "3month" || sub.plan === "annual";
+  const cancelAtPeriodEnd = (subscription as any).cancel_at_period_end;
+  const cancelAt = (subscription as any).cancel_at;
+  const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
+  const isPrepaid = sub.plan === "30day" || sub.plan === "annual";
+
+  if (subscription.status === "active" && cancelAtPeriodEnd) {
+    // Subscriber cancelled but retains access until period end
+    const expiresAt = cancelAt ? new Date(cancelAt * 1000) : currentPeriodEnd;
+    const wasAlreadyCancelling = sub.planStatus === "cancelling";
+    await db.subscriber.update({
+      where: { id: sub.id },
+      data: {
+        planStatus: "cancelling",
+        active: true,
+        accessExpiresAt: expiresAt,
+        reminderSentAt: null,
+      },
+    });
+    // Only send cancellation email once
+    if (!wasAlreadyCancelling) {
+      await sendCancellationConfirmationEmail(
+        { name: sub.name, email: sub.email },
+        sub.plan ?? "monthly",
+        expiresAt
+      );
+    }
+  } else if (subscription.status === "active") {
     await db.subscriber.update({
       where: { id: sub.id },
       data: {

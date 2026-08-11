@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { toE164 } from "@/lib/sms";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, phone } = await req.json();
+    const { name, email, phone: rawPhone } = await req.json();
+    const phone = rawPhone?.trim() ? toE164(rawPhone.trim()) : null;
 
     if (!name?.trim() || !email?.trim()) {
       return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
@@ -16,8 +18,8 @@ export async function POST(req: Request) {
 
     const subscriber = await db.subscriber.upsert({
       where: { email: email.toLowerCase().trim() },
-      create: { name: name.trim(), email: email.toLowerCase().trim(), phone: phone?.trim() || null, active: true },
-      update: { name: name.trim(), phone: phone?.trim() || null, active: true },
+      create: { name: name.trim(), email: email.toLowerCase().trim(), phone, active: true },
+      update: { name: name.trim(), phone, active: true },
     });
 
     return NextResponse.json(subscriber, { status: 201 });

@@ -69,6 +69,7 @@ model Subscriber {
   accessExpiresAt      DateTime?
   promoCode            String?
   smsConsent           Boolean        @default(false)
+  reminderSentAt       DateTime?
 
   affiliateUses        AffiliateUse[]
 }
