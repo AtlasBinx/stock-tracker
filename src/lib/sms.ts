@@ -9,33 +9,49 @@ export interface SmsRecipient {
   phone: string;
 }
 
+function stripBom(s: string) {
+  return s.replace(/^﻿/, "").trim();
+}
+
 function getTwilioConfig() {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_FROM_NUMBER;
   if (!sid || !token || !from) return null;
-  return { sid, token, from };
+  return { sid: stripBom(sid), token: stripBom(token), from: stripBom(from) };
+}
+
+export function toE164(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("1") && digits.length === 11) return `+${digits}`;
+  if (digits.length === 10) return `+1${digits}`;
+  return `+${digits}`;
 }
 
 async function sendSms(to: string, body: string): Promise<void> {
   const config = getTwilioConfig();
   if (!config) return; // SMS not configured yet — silent no-op
+  to = toE164(to);
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${config.sid}/Messages.json`;
-  const creds = Buffer.from(`${config.sid}:${config.token}`).toString("base64");
+  const creds = btoa(`${config.sid}:${config.token}`);
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${creds}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({ To: to, From: config.from, Body: body }).toString(),
-  });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${creds}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ To: to, From: config.from, Body: body }).toString(),
+    });
 
-  if (!res.ok) {
-    const err = await res.text();
-    console.error(`[SMS] Failed to ${to}:`, err);
+    if (!res.ok) {
+      const err = await res.text();
+      console.error(`[SMS] Failed to ${to} (${res.status}):`, err);
+    }
+  } catch (err) {
+    console.error(`[SMS] Fetch error to ${to}:`, err);
   }
 }
 
@@ -44,7 +60,7 @@ export async function sendSmsOptInConfirmation(phone: string): Promise<void> {
   if (!config) return;
 
   const body =
-    "Guitars Garden Alerts: You're now subscribed to stock alerts. " +
+    "Guitar Stock Alert: You're now subscribed to stock alerts. " +
     "Msg frequency varies. Msg & data rates may apply. " +
     "Reply STOP to cancel, HELP for help.";
 
