@@ -68,7 +68,6 @@ export async function POST(req: NextRequest) {
       },
       subscription_data: {
         metadata: { plan: planKey, name, phone: phone ?? "" },
-        ...(planConfig.cancelAtPeriodEnd ? { cancel_at_period_end: true } : {}),
       },
       success_url: `${BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/signup`,

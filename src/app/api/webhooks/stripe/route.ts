@@ -64,6 +64,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const isPrepaid = plan === "30day" || plan === "annual";
   const accessExpiresAt = isPrepaid ? currentPeriodEnd : null;
+
+  // For prepaid plans, set cancel_at_period_end so Stripe doesn't auto-renew
+  if (isPrepaid) {
+    await stripe.subscriptions.update(session.subscription as string, {
+      cancel_at_period_end: true,
+    });
+  }
   const amountPaid = (session.amount_total ?? 0) / 100;
 
   const subscriber = await db.subscriber.upsert({
