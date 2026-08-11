@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorizedResponse();
   const codes = await db.affiliateCode.findMany({
     include: { uses: true },
     orderBy: { createdAt: "desc" },
@@ -36,8 +38,8 @@ export async function GET() {
   return NextResponse.json(report);
 }
 
-// POST — create a new affiliate code (tracking only, no Stripe discount)
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorizedResponse();
   const { code, creatorName } = await req.json();
   if (!code || !creatorName) {
     return NextResponse.json({ error: "code and creatorName required" }, { status: 400 });

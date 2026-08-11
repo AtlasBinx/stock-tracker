@@ -229,7 +229,7 @@ export default function PricingPage() {
                     ? <li>• Auto-renews monthly at ${plan.price}. Cancel anytime — access continues through your paid period.</li>
                     : <li>• This is a one-time charge. Your access ends after {plan.billing} with <strong className="text-emerald-400">no automatic renewal and no future charges.</strong></li>
                   }
-                  <li>• Cancel or manage your subscription anytime at <span className="text-indigo-400">stock-tracker-seven-delta.vercel.app/account</span></li>
+                  <li>• Cancel or manage your subscription anytime at <span className="text-indigo-400">guitarstockalert.com/account</span></li>
                   <li>• Email alerts sent to your address. SMS alerts sent only if you opt in below.</li>
                 </ul>
               </div>

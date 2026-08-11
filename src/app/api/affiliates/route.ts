@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,8 @@ function periodStats(uses: { createdAt: Date; amount: number; bounty: number }[]
   };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorizedResponse();
   const now = new Date();
 
   const weekAgo = new Date(now);

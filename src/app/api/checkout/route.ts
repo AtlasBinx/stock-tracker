@@ -32,8 +32,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If switching from monthly, cancel existing subscription first
-    if (cancelExisting && existing?.stripeSubscriptionId) {
+    // If switching from monthly, cancel existing subscription first.
+    // Only allowed when the existing record email matches the checkout email.
+    if (cancelExisting && existing?.stripeSubscriptionId && existing.email === email) {
       await stripe.subscriptions.update(existing.stripeSubscriptionId, {
         cancel_at_period_end: true,
       });

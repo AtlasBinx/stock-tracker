@@ -1,11 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { Resend } from "resend";
 import { toE164 } from "@/lib/sms";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+function escapeHtml(str: string) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorizedResponse();
   try {
     const { subject, message, sendEmail, sendSms, recipientIds } = await req.json();
 
@@ -50,7 +56,7 @@ export async function POST(req: Request) {
 <html>
 <body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
   <p>Hi ${s.name},</p>
-  <div style="white-space:pre-wrap;line-height:1.6">${message.replace(/\n/g, "<br>")}</div>
+  <div style="white-space:pre-wrap;line-height:1.6">${escapeHtml(message).replace(/\n/g, "<br>")}</div>
   <p style="margin-top:32px;font-size:12px;color:#999">
     Manage your subscription: <a href="${APP_URL}/account" style="color:#6366f1">${APP_URL}/account</a>
   </p>

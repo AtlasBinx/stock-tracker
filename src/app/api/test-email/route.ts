@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendStockAddedEmail } from "@/lib/mailer";
 import { sendStockAddedSms } from "@/lib/sms";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/auth";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorizedResponse();
   try {
     const body = await req.json().catch(() => ({}));
     const { recipientEmails } = body as { recipientEmails?: string[] };

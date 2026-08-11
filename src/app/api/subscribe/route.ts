@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { toE164 } from "@/lib/sms";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/auth";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorizedResponse();
   try {
     const { name, email, phone: rawPhone } = await req.json();
     const phone = rawPhone?.trim() ? toE164(rawPhone.trim()) : null;
@@ -29,7 +31,8 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorizedResponse();
   try {
     const subscribers = await db.subscriber.findMany({
       orderBy: { createdAt: "desc" },
