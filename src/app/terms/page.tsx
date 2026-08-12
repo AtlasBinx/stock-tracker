@@ -1,5 +1,5 @@
 export default function TermsPage() {
-  const siteUrl = "https://stock-tracker-seven-delta.vercel.app";
+  const siteUrl = "https://guitarstockalert.com";
   const contactEmail = "alerts@meridianrev.com";
 
   return (
