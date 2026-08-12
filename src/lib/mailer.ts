@@ -172,6 +172,40 @@ export async function sendCancellationConfirmationEmail(
   });
 }
 
+export async function sendTrialExpiredEmail(
+  recipient: EmailRecipient
+): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const resend = new Resend(apiKey);
+  const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
+
+  await resend.emails.send({
+    from: FROM,
+    to: recipient.email,
+    subject: `Your Guitar Stock Alert trial has ended — stay in the loop for $14.99/yr`,
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+  <h2 style="margin:0 0 8px">🎸 Your free trial has ended</h2>
+  <p>Hi ${escapeHtml(recipient.name)},</p>
+  <p>Your 30-day free trial of Guitar Stock Alert has expired and your alerts have been paused.</p>
+  <p>Guitars Garden drops new stock regularly — especially heading into the holidays. If you want back in before the next drop, you can lock in a full year for just <strong>$14.99</strong>. That's $1.25 a month to never miss a deal again.</p>
+  <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;margin:16px 0">
+    Stay in the loop — $14.99/year →
+  </a>
+  <p style="font-size:13px;color:#555;margin-top:8px">
+    Not ready for a year? Grab a <a href="${APP_URL}/signup" style="color:#4f46e5">30-day pass for $2.99</a> and jump back in anytime.
+  </p>
+  <p style="font-size:12px;color:#999;margin-top:32px">
+    No action needed if you'd rather not continue — you won't be charged anything.
+  </p>
+</body>
+</html>`,
+  });
+}
+
 export async function sendExpiryReminderEmail(
   recipient: EmailRecipient,
   plan: string,

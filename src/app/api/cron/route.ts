@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { syncGuitarsGarden } from "@/lib/guitarsgarden";
 import { db } from "@/lib/db";
-import { sendExpiryReminderEmail } from "@/lib/mailer";
+import { sendExpiryReminderEmail, sendTrialExpiredEmail } from "@/lib/mailer";
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -17,14 +17,27 @@ export async function GET(req: Request) {
 
   const now = new Date();
 
-  // Deactivate subscribers whose access has expired
-  await db.subscriber.updateMany({
+  // Find expired subscribers before deactivating so we can email them
+  const justExpired = await db.subscriber.findMany({
     where: {
       active: true,
       accessExpiresAt: { lt: now },
     },
-    data: { active: false, planStatus: "expired" },
+    select: { id: true, name: true, email: true },
   });
+
+  // Deactivate them
+  if (justExpired.length > 0) {
+    await db.subscriber.updateMany({
+      where: { id: { in: justExpired.map((s) => s.id) } },
+      data: { active: false, planStatus: "expired" },
+    });
+
+    // Send deactivation + conversion email to each
+    for (const sub of justExpired) {
+      await sendTrialExpiredEmail({ name: sub.name, email: sub.email });
+    }
+  }
 
   // Send expiry reminders to subscribers whose access ends in 2–4 days (haven't been sent one yet)
   const in2Days = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
@@ -54,6 +67,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     ...result,
+    expiredDeactivated: justExpired.length,
     expiryRemindersSent: expiring.length,
     timestamp: new Date().toISOString(),
   });
