@@ -351,7 +351,7 @@ export default function SignupPage() {
                     <li>• <strong className="text-white">${plan.price}</strong> charged once for {plan.billing} of access</li>
                     <li>• Email alerts included · Add your phone for instant SMS alerts</li>
                     <li>• <strong className="text-emerald-400">No automatic renewal. No future charges.</strong></li>
-                    <li>• Manage your account at <span className="text-indigo-400">guitarstockalert.com/account</span></li>
+                    <li>• Manage your account at <a href="/account" className="text-indigo-400 hover:underline">guitarstockalert.com/account</a></li>
                   </ul>
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
