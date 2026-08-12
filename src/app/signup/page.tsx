@@ -6,7 +6,8 @@ import { PLANS, type PlanKey } from "@/lib/stripe";
 type Mode = "trial" | PlanKey;
 
 export default function SignupPage() {
-  const [mode, setMode] = useState<Mode>("trial");
+  const [refCode, setRefCode] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>("annual");
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [promoCode, setPromoCode] = useState("");
   const [smsConsent, setSmsConsent] = useState(false);
@@ -16,8 +17,15 @@ export default function SignupPage() {
 
   useEffect(() => {
     const ref = new URLSearchParams(window.location.search).get("ref");
-    if (ref) setPromoCode(ref.toUpperCase());
+    if (ref) {
+      const upper = ref.toUpperCase();
+      setRefCode(upper);
+      setPromoCode(upper);
+      setMode("trial"); // default to trial when ref code present
+    }
   }, []);
+
+  const hasTrial = !!refCode;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +40,7 @@ export default function SignupPage() {
       const res = await fetch("/api/trial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, smsConsent, promoCode: promoCode || undefined }),
+        body: JSON.stringify({ ...form, promoCode }),
       });
       const data = await res.json();
       if (res.status === 409) {
@@ -78,7 +86,7 @@ export default function SignupPage() {
           <div className="text-5xl mb-4">🎸</div>
           <h1 className="text-2xl font-bold mb-2">You&apos;re in!</h1>
           <p className="mb-4" style={{ color: "var(--text-muted)" }}>
-            Check your email — your trial is active for 30 days. We&apos;ll text or email you the second something drops at Guitars Garden.
+            Check your email — your trial is active for 30 days. We&apos;ll text you the second something drops at Guitars Garden.
           </p>
           <a
             href="/account"
@@ -104,16 +112,22 @@ export default function SignupPage() {
           Get a <strong className="text-white">text message</strong> the second new guitars hit the store.
           Never miss a drop again.
         </p>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Free for 30 days · No credit card required
-        </p>
+        {hasTrial ? (
+          <p className="text-sm text-emerald-400 font-medium">
+            🎁 Referral code applied — free 30-day trial unlocked
+          </p>
+        ) : (
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            Plans start at $2.99 · No auto-renewal
+          </p>
+        )}
       </div>
 
       {/* ── How it works ── */}
       <div className="max-w-2xl mx-auto px-4 pb-12">
         <div className="grid grid-cols-3 gap-4 text-center">
           {[
-            { step: "1", title: "Sign up free", body: "Just your name and email. No card, no commitment." },
+            { step: "1", title: "Sign up", body: "Takes 30 seconds. No commitment." },
             { step: "2", title: "We watch 24/7", body: "Our scanner checks Guitars Garden every hour, day and night." },
             { step: "3", title: "You get the text", body: "The second something drops, you're first to know." },
           ].map(({ step, title, body }) => (
@@ -132,25 +146,28 @@ export default function SignupPage() {
       <div className="max-w-2xl mx-auto px-4 pb-16">
 
         {/* Plan selector */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {/* Free trial */}
-          <button
-            onClick={() => setMode("trial")}
-            className="relative rounded-2xl p-4 text-left transition"
-            style={{
-              backgroundColor: mode === "trial" ? "rgba(99,102,241,0.15)" : "var(--surface)",
-              border: mode === "trial" ? "2px solid #6366f1" : "2px solid var(--border)",
-            }}
-          >
-            <span className="absolute -top-3 left-3 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-semibold text-white">
-              Free
-            </span>
-            <p className="font-semibold text-sm mt-1">30-Day Trial</p>
-            <p className="text-xl font-bold mt-1">$0</p>
-            <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              No card required · Try it free
-            </p>
-          </button>
+        <div className={`grid gap-3 mb-6 ${hasTrial ? "grid-cols-3" : "grid-cols-2"}`}>
+
+          {/* Free trial — only shown with ref code */}
+          {hasTrial && (
+            <button
+              onClick={() => setMode("trial")}
+              className="relative rounded-2xl p-4 text-left transition"
+              style={{
+                backgroundColor: mode === "trial" ? "rgba(16,185,129,0.12)" : "var(--surface)",
+                border: mode === "trial" ? "2px solid #10b981" : "2px solid var(--border)",
+              }}
+            >
+              <span className="absolute -top-3 left-3 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-semibold text-white">
+                Free
+              </span>
+              <p className="font-semibold text-sm mt-1">30-Day Trial</p>
+              <p className="text-xl font-bold mt-1">$0</p>
+              <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Referral exclusive · Phone required
+              </p>
+            </button>
+          )}
 
           {/* 30-day pass */}
           <button
@@ -243,30 +260,15 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* SMS opt-in */}
-            <div className="rounded-xl p-4" style={{ backgroundColor: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}>
-              <p className="mb-2 text-xs font-semibold text-indigo-300 uppercase tracking-wide">
-                📱 Text alerts — Get notified instantly
-              </p>
-              <label className="flex items-start gap-3 cursor-pointer mb-3">
+            {/* Phone — required for trial, optional with SMS opt-in for paid */}
+            {mode === "trial" ? (
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-300">
+                  Phone number <span className="text-red-400">*</span>
+                  <span className="ml-1 text-xs font-normal text-emerald-400">(required — we&apos;ll text you instantly when something drops)</span>
+                </label>
                 <input
-                  type="checkbox"
-                  checked={smsConsent}
-                  onChange={(e) => {
-                    setSmsConsent(e.target.checked);
-                    if (!e.target.checked) setForm((f) => ({ ...f, phone: "" }));
-                  }}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  <strong className="text-white">Yes, text me when something drops</strong> — I agree to receive automated stock alert texts from Guitar Stock Alert.
-                  Message frequency varies.{" "}
-                  <strong className="text-white">Msg &amp; data rates may apply.</strong>{" "}
-                  Reply <strong className="text-white">STOP</strong> to opt out anytime.
-                </span>
-              </label>
-              {smsConsent && (
-                <input
+                  required
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -274,11 +276,47 @@ export default function SignupPage() {
                   className="w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-indigo-500"
                   style={{ backgroundColor: "var(--surface-2)" }}
                 />
-              )}
-            </div>
+                <p className="mt-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                  By entering your phone number you agree to receive automated stock alert texts.
+                  Msg &amp; data rates may apply. Reply STOP to opt out anytime.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl p-4" style={{ backgroundColor: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}>
+                <p className="mb-2 text-xs font-semibold text-indigo-300 uppercase tracking-wide">
+                  📱 Text alerts — Get notified instantly
+                </p>
+                <label className="flex items-start gap-3 cursor-pointer mb-3">
+                  <input
+                    type="checkbox"
+                    checked={smsConsent}
+                    onChange={(e) => {
+                      setSmsConsent(e.target.checked);
+                      if (!e.target.checked) setForm((f) => ({ ...f, phone: "" }));
+                    }}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+                    <strong className="text-white">Yes, text me when something drops</strong> — I agree to receive automated stock alert texts from Guitar Stock Alert.
+                    Msg &amp; data rates may apply. Reply <strong className="text-white">STOP</strong> to opt out anytime.
+                  </span>
+                </label>
+                {smsConsent && (
+                  <input
+                    type="tel"
+                    required={smsConsent}
+                    value={form.phone}
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                    placeholder="+1 555 000 0000"
+                    className="w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-indigo-500"
+                    style={{ backgroundColor: "var(--surface-2)" }}
+                  />
+                )}
+              </div>
+            )}
 
-            {/* Promo code */}
-            {promoCode && (
+            {/* Referral code — shown for paid plans if ref present, or manually entered */}
+            {isPaid && promoCode && (
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-300">Referral code</label>
                 <input
@@ -289,7 +327,7 @@ export default function SignupPage() {
                 />
               </div>
             )}
-            {!promoCode && (
+            {isPaid && !promoCode && (
               <button
                 type="button"
                 onClick={() => setPromoCode(" ")}
@@ -298,7 +336,7 @@ export default function SignupPage() {
                 Have a referral code?
               </button>
             )}
-            {promoCode === " " && (
+            {isPaid && promoCode === " " && (
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-300">Referral code</label>
                 <input
@@ -319,8 +357,8 @@ export default function SignupPage() {
                   <p className="font-medium mb-2">Order summary — {plan.name}</p>
                   <ul className="space-y-1 text-xs" style={{ color: "var(--text-muted)" }}>
                     <li>• <strong className="text-white">${plan.price}</strong> charged once for {plan.billing} of access</li>
-                    <li>• This is a one-time charge. <strong className="text-emerald-400">No automatic renewal. No future charges.</strong></li>
-                    <li>• Manage your subscription at <span className="text-indigo-400">guitarstockalert.com/account</span></li>
+                    <li>• <strong className="text-emerald-400">No automatic renewal. No future charges.</strong></li>
+                    <li>• Manage your account at <span className="text-indigo-400">guitarstockalert.com/account</span></li>
                   </ul>
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
@@ -359,7 +397,7 @@ export default function SignupPage() {
 
             {mode === "trial" && (
               <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
-                Free for 30 days · No credit card · Cancel anytime
+                Free for 30 days · No credit card · SMS required
               </p>
             )}
             {isPaid && (
@@ -384,7 +422,7 @@ export default function SignupPage() {
           <a href="/sms-optin" className="text-indigo-400 hover:underline">SMS opt-in</a>
         </p>
         <p className="mt-2 text-center text-xs" style={{ color: "var(--text-muted)" }}>
-          SMS opt-in is optional and not required to use this service.
+          SMS opt-in is optional and not required to purchase or use this service.
         </p>
       </div>
     </div>
