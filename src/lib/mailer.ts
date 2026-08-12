@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { PLANS, type PlanKey } from "@/lib/stripe";
+import type { ProductAlert } from "@/lib/guitarsgarden";
 
 const STORE_URL = "https://guitarsgarden.com";
 const APP_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://guitarstockalert.com";
@@ -9,49 +10,72 @@ export interface EmailRecipient {
   email: string;
 }
 
-export async function sendBackInStockEmail(
+function escapeHtml(str: string) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+export async function sendStockAlertEmail(
   recipients: EmailRecipient[],
-  products: string[]
+  products: ProductAlert[]
 ): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey || recipients.length === 0) return;
+  if (!apiKey || recipients.length === 0 || products.length === 0) return;
 
   const resend = new Resend(apiKey);
-  const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <onboarding@resend.dev>";
-  const productList = products.map((p) => `• ${p}`).join("\n");
+  const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
+
+  const hasNew = products.some((p) => p.isNew);
+  const hasRestock = products.some((p) => !p.isNew);
+  const subject = hasNew && hasRestock
+    ? "New & restocked guitars at Guitars Garden"
+    : hasNew
+    ? "New guitars just dropped at Guitars Garden"
+    : "Guitars back in stock at Guitars Garden";
+
+  const productCardsHtml = products.map((p) => `
+    <a href="${escapeHtml(p.url)}" style="display:block;text-decoration:none;color:inherit;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:12px">
+      ${p.imageUrl ? `<img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.title)}" style="width:100%;max-height:220px;object-fit:cover;display:block">` : ""}
+      <div style="padding:12px 16px">
+        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${p.isNew ? "#059669" : "#2563eb"}">${p.isNew ? "NEW" : "BACK IN STOCK"}</p>
+        <p style="margin:0;font-size:14px;font-weight:600;color:#111">${escapeHtml(p.title)}</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#4f46e5;font-weight:500">View product →</p>
+      </div>
+    </a>`).join("");
+
+  const productTextList = products.map((p) =>
+    `${p.isNew ? "[NEW]" : "[RESTOCK]"} ${p.title}\n${p.url}`
+  ).join("\n\n");
 
   await Promise.allSettled(
     recipients.map((r) =>
       resend.emails.send({
         from: FROM,
         to: r.email,
-        subject: "🎸 Back in stock at Guitars Garden",
+        subject,
         text: [
           `Hi ${r.name},`,
           "",
-          "The following items are back in stock at Guitars Garden:",
+          "Here's what just changed at Guitars Garden:",
           "",
-          productList,
+          productTextList,
           "",
           `View the store: ${STORE_URL}`,
           "",
-          "You're receiving this because you signed up for stock alerts.",
-          "Reply to this email to unsubscribe.",
+          `Manage your subscription: ${APP_URL}/account`,
         ].join("\n"),
         html: `
 <!DOCTYPE html>
 <html>
-<body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
-  <h2 style="margin:0 0 8px">🎸 Back in stock</h2>
-  <p style="margin:0 0 20px;color:#555">Hi ${r.name}, these items just came back in stock at Guitars Garden:</p>
-  <ul style="padding-left:20px;margin:0 0 24px">
-    ${products.map((p) => `<li style="margin-bottom:6px">${p}</li>`).join("")}
-  </ul>
-  <a href="${STORE_URL}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600">
-    View Guitars Garden →
+<body style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1a1a1a;background:#fff">
+  <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">Guitar Stock Alert</p>
+  <h2 style="margin:0 0 6px;font-size:22px;font-weight:700">${escapeHtml(subject)}</h2>
+  <p style="margin:0 0 24px;color:#555;font-size:14px">Hi ${escapeHtml(r.name)}, here's what just changed at Guitars Garden:</p>
+  ${productCardsHtml}
+  <a href="${STORE_URL}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:8px;font-size:14px">
+    View full store →
   </a>
   <p style="margin-top:32px;font-size:12px;color:#999">
-    Manage or cancel your subscription: <a href="${APP_URL}/account" style="color:#6366f1">${APP_URL}/account</a>
+    Manage your subscription: <a href="${APP_URL}/account" style="color:#6366f1">${APP_URL}/account</a>
   </p>
 </body>
 </html>`,
@@ -59,6 +83,10 @@ export async function sendBackInStockEmail(
     )
   );
 }
+
+// Keep old names as aliases so test-email route still compiles during transition
+export const sendBackInStockEmail = sendStockAlertEmail as unknown as (r: EmailRecipient[], p: string[]) => Promise<void>;
+export const sendStockAddedEmail = sendStockAlertEmail as unknown as (r: EmailRecipient[], p: string[]) => Promise<void>;
 
 export async function sendStockAddedEmail(
   recipients: EmailRecipient[],

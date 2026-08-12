@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { sendStockAddedEmail, sendBackInStockEmail } from "./mailer";
-import { sendStockAddedSms, sendBackInStockSms } from "./sms";
+import { sendStockAlertEmail } from "./mailer";
+import { sendStockAlertSms } from "./sms";
 
 const STORE_URL = "https://guitarsgarden.com/products.json?limit=250";
 
@@ -12,15 +12,27 @@ interface ShopifyVariant {
   available: boolean;
 }
 
+interface ShopifyImage {
+  src: string;
+}
+
 interface ShopifyProduct {
   id: number;
   title: string;
   handle: string;
   variants: ShopifyVariant[];
+  images: ShopifyImage[];
 }
 
 interface ShopifyResponse {
   products: ShopifyProduct[];
+}
+
+export interface ProductAlert {
+  title: string;
+  url: string;
+  imageUrl: string | null;
+  isNew: boolean; // true = newly added, false = back in stock
 }
 
 export interface SyncSummary {
@@ -85,6 +97,7 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
   const removed: string[] = [];
   const wentInStock: string[] = [];
   const wentOutOfStock: string[] = [];
+  const alertProducts: ProductAlert[] = [];
 
   // --- Check live products against DB ---
   for (const [shopifyId, live] of liveMap) {
@@ -114,6 +127,12 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
       });
 
       added.push(live.title);
+      alertProducts.push({
+        title: live.title,
+        url: `https://guitarsgarden.com/products/${live.handle}`,
+        imageUrl: live.images[0]?.src ?? null,
+        isNew: true,
+      });
     } else {
       // Product exists — check for changes
       const updates: Record<string, unknown> = { lastSeen: new Date() };
@@ -124,6 +143,12 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
         updates.active = true;
         added.push(live.title);
         events.push("WENT_IN_STOCK");
+        alertProducts.push({
+          title: live.title,
+          url: `https://guitarsgarden.com/products/${live.handle}`,
+          imageUrl: live.images[0]?.src ?? null,
+          isNew: true,
+        });
       }
 
       if (existing.available !== liveAvailable) {
@@ -131,6 +156,12 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
         if (liveAvailable) {
           wentInStock.push(live.title);
           events.push("WENT_IN_STOCK");
+          alertProducts.push({
+            title: live.title,
+            url: `https://guitarsgarden.com/products/${live.handle}`,
+            imageUrl: live.images[0]?.src ?? null,
+            isNew: false,
+          });
         } else {
           wentOutOfStock.push(live.title);
           events.push("WENT_OUT_OF_STOCK");
@@ -168,8 +199,8 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
     }
   }
 
-  // Send alerts — only to active paid subscribers
-  if (added.length > 0 || wentInStock.length > 0) {
+  // Send one combined alert for all new + restocked products
+  if (alertProducts.length > 0) {
     const now = new Date();
     const subscribers = await db.subscriber.findMany({
       where: {
@@ -188,14 +219,8 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
         .filter((s) => s.smsConsent && s.phone)
         .map((s) => ({ name: s.name, phone: s.phone! }));
 
-      if (added.length > 0) {
-        await sendStockAddedEmail(subscribers, added);
-        if (smsRecipients.length > 0) await sendStockAddedSms(smsRecipients, added);
-      }
-      if (wentInStock.length > 0) {
-        await sendBackInStockEmail(subscribers, wentInStock);
-        if (smsRecipients.length > 0) await sendBackInStockSms(smsRecipients, wentInStock);
-      }
+      await sendStockAlertEmail(subscribers, alertProducts);
+      if (smsRecipients.length > 0) await sendStockAlertSms(smsRecipients, alertProducts);
     }
   }
 

@@ -67,30 +67,31 @@ export async function sendSmsOptInConfirmation(phone: string): Promise<void> {
   await sendSms(phone, body);
 }
 
-export async function sendStockAddedSms(
+export async function sendStockAlertSms(
   recipients: SmsRecipient[],
-  addedProducts: string[]
+  products: { title: string; url: string; isNew: boolean }[]
 ): Promise<void> {
-  if (!getTwilioConfig() || recipients.length === 0) return;
+  if (!getTwilioConfig() || recipients.length === 0 || products.length === 0) return;
 
-  const storeUrl = "https://guitarsgarden.com";
-  const list = addedProducts.slice(0, 3).join(", ");
-  const more = addedProducts.length > 3 ? ` (+${addedProducts.length - 3} more)` : "";
-  const body = `🎸 New stock at Guitars Garden: ${list}${more}\n${storeUrl}\nReply STOP to opt out.`;
+  const hasNew = products.some((p) => p.isNew);
+  const hasRestock = products.some((p) => !p.isNew);
+  const intro = hasNew && hasRestock
+    ? "New & restocked at Guitars Garden:"
+    : hasNew
+    ? "New guitars at Guitars Garden:"
+    : "Back in stock at Guitars Garden:";
+
+  // List up to 3 products with direct links
+  const lines = products.slice(0, 3).map((p) =>
+    `${p.isNew ? "NEW" : "RESTOCK"}: ${p.title}\n${p.url}`
+  );
+  const more = products.length > 3 ? `\n+${products.length - 3} more at https://guitarsgarden.com` : "";
+
+  const body = `Guitar Stock Alert: ${intro}\n\n${lines.join("\n\n")}${more}\n\nReply STOP to opt out.`;
 
   await Promise.allSettled(recipients.map((r) => sendSms(r.phone, body)));
 }
 
-export async function sendBackInStockSms(
-  recipients: SmsRecipient[],
-  products: string[]
-): Promise<void> {
-  if (!getTwilioConfig() || recipients.length === 0) return;
-
-  const storeUrl = "https://guitarsgarden.com";
-  const list = products.slice(0, 3).join(", ");
-  const more = products.length > 3 ? ` (+${products.length - 3} more)` : "";
-  const body = `🎸 Back in stock at Guitars Garden: ${list}${more}\n${storeUrl}\nReply STOP to opt out.`;
-
-  await Promise.allSettled(recipients.map((r) => sendSms(r.phone, body)));
-}
+// Keep old names as aliases so existing imports don't break
+export const sendStockAddedSms = sendStockAlertSms as unknown as (r: SmsRecipient[], p: string[]) => Promise<void>;
+export const sendBackInStockSms = sendStockAlertSms as unknown as (r: SmsRecipient[], p: string[]) => Promise<void>;
