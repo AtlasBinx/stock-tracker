@@ -518,9 +518,10 @@ function LoadingSpinner() {
 }
 
 const PLAN_LABELS: Record<string, string> = {
-  monthly: "Monthly",
-  "30day": "30-Day",
+  trial: "Free Trial",
+  "30day": "30-Day Pass",
   annual: "Annual",
+  monthly: "Monthly", // legacy
 };
 
 const STATUS_STYLES: Record<string, { label: string; classes: string }> = {
@@ -592,7 +593,7 @@ function SubscriberTable({
                   ) : "—"}
                 </td>
                 <td className="px-4 py-3 tabular-nums whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
-                  {s.accessExpiresAt ? new Date(s.accessExpiresAt).toLocaleDateString() : s.plan === "monthly" ? "∞" : "—"}
+                  {s.accessExpiresAt ? new Date(s.accessExpiresAt).toLocaleDateString() : "—"}
                 </td>
                 <td className="px-4 py-3 tabular-nums whitespace-nowrap" style={{ color: "var(--text-muted)" }}>
                   {new Date(s.createdAt).toLocaleDateString()}

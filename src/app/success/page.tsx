@@ -15,10 +15,10 @@ export default function SuccessPage() {
         <p className="text-5xl">🎸</p>
         <h1 className="mt-4 text-2xl font-bold">You&apos;re in!</h1>
         <p className="mt-3 text-sm" style={{ color: "var(--text-muted)" }}>
-          Your subscription is active. You&apos;ll receive a confirmation email shortly with your plan details and how to cancel.
+          Your subscription is active. Check your email for a confirmation with your plan details.
         </p>
         <p className="mt-4 text-sm" style={{ color: "var(--text-muted)" }}>
-          We&apos;ll email you every time new guitars are added to{" "}
+          We&apos;ll email you — and text you if you opted in — every time new guitars drop at{" "}
           <a href="https://guitarsgarden.com" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">
             Guitars Garden
           </a>.

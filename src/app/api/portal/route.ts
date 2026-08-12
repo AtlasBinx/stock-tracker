@@ -11,7 +11,10 @@ export async function GET(req: NextRequest) {
   const subscriber = await db.subscriber.findUnique({ where: { email } });
   if (!subscriber) return NextResponse.json({ error: "No subscription found for this email" }, { status: 404 });
 
-  const planLabel = subscriber.plan ? (PLANS[subscriber.plan as PlanKey]?.name ?? subscriber.plan) : null;
+  const FRIENDLY: Record<string, string> = { trial: "Free Trial", monthly: "Monthly" };
+  const planLabel = subscriber.plan
+    ? (PLANS[subscriber.plan as PlanKey]?.name ?? FRIENDLY[subscriber.plan] ?? subscriber.plan)
+    : null;
 
   return NextResponse.json({
     name: subscriber.name,
