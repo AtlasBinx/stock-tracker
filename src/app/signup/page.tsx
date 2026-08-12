@@ -119,7 +119,7 @@ export default function SignupPage() {
           </p>
         ) : (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Plans start at $2.99 · No auto-renewal
+            Plans start at $5.99 · No auto-renewal
           </p>
         )}
       </div>
@@ -385,7 +385,7 @@ export default function SignupPage() {
                 ? "Activate free trial — no card, ever"
                 : mode === "annual"
                 ? "Get annual access — $14.99"
-                : "Get 30-day access — $2.99"}
+                : "Get 30-day access — $5.99"}
             </button>
 
             {mode === "trial" && (

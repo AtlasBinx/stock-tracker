@@ -21,12 +21,12 @@ export const stripe = new Proxy({} as Stripe, {
 export const PLANS = {
   "30day": {
     name: "30-Day Pass",
-    price: 2.99,
+    price: 5.99,
     priceEnvKey: "STRIPE_PRICE_30DAY",
     billing: "30 days",
     renews: false,
     cancelAtPeriodEnd: true,
-    bounty: 0.75,
+    bounty: 2.00,
     tagline: "Drop incoming? Get in now · One charge, never auto-renews",
   },
   annual: {
@@ -36,7 +36,7 @@ export const PLANS = {
     billing: "12 months",
     renews: false,
     cancelAtPeriodEnd: true,
-    bounty: 3.0,
+    bounty: 5.00,
     tagline: "Just $1.25/mo · Best value · One charge, never auto-renews",
   },
 } as const;

@@ -866,7 +866,7 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
-                    {["Creator", "Code", "Signup Link", "Subs", "Revenue", "Bounty Owed", "Status"].map((h) => (
+                    {["Creator", "Code", "Links", "Subs", "Revenue", "Bounty Owed", "Status"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
                     ))}
                   </tr>
@@ -935,9 +935,8 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
   );
 }
 
-function CopyLink({ code }: { code: string }) {
+function CopyButton({ url, label }: { url: string; label: string }) {
   const [copied, setCopied] = useState(false);
-  const url = `https://guitarstockalert.com/signup?ref=${code}`;
 
   function handleCopy() {
     navigator.clipboard.writeText(url).then(() => {
@@ -948,8 +947,8 @@ function CopyLink({ code }: { code: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-mono truncate max-w-[180px]" style={{ color: "var(--text-muted)" }}>
-        /signup?ref={code}
+      <span className="text-xs font-mono truncate max-w-[160px]" style={{ color: "var(--text-muted)" }}>
+        {label}
       </span>
       <button
         onClick={handleCopy}
@@ -960,8 +959,23 @@ function CopyLink({ code }: { code: string }) {
           border: copied ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(99,102,241,0.3)",
         }}
       >
-        {copied ? "✓ Copied" : "Copy"}
+        {copied ? "✓" : "Copy"}
       </button>
+    </div>
+  );
+}
+
+function CopyLink({ code }: { code: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <CopyButton
+        url={`https://guitarstockalert.com/signup?ref=${code}`}
+        label={`/signup?ref=${code}`}
+      />
+      <CopyButton
+        url={`https://guitarstockalert.com/creators/${code}`}
+        label={`/creators/${code}`}
+      />
     </div>
   );
 }
