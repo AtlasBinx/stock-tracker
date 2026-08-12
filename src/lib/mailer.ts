@@ -97,25 +97,28 @@ export async function sendPurchaseConfirmationEmail(
   const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
 
   const planConfig = PLANS[plan as PlanKey];
-  const planName = planConfig?.name ?? plan;
-  const expiryLine = accessExpiresAt
+  const isTrial = plan === "trial";
+  const planName = isTrial ? "Free 30-Day Trial" : (planConfig?.name ?? plan);
+  const expiryLine = isTrial && accessExpiresAt
+    ? `Your free trial runs through <strong>${accessExpiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</strong>. To keep getting alerts after that, upgrade to an annual plan for just $14.99/year.`
+    : accessExpiresAt
     ? `Your access runs through <strong>${accessExpiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</strong> and will not auto-renew.`
     : `Your subscription renews monthly at $${amountPaid.toFixed(2)} until you cancel.`;
 
   await resend.emails.send({
     from: FROM,
     to: recipient.email,
-    subject: `🎸 You're subscribed — Guitar Stock Alert`,
+    subject: isTrial ? `🎸 Your free trial is active — Guitar Stock Alert` : `🎸 You're subscribed — Guitar Stock Alert`,
     html: `
 <!DOCTYPE html>
 <html>
 <body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
-  <h2 style="margin:0 0 8px">🎸 You're subscribed!</h2>
+  <h2 style="margin:0 0 8px">${isTrial ? "🎸 Your free trial is active!" : "🎸 You're subscribed!"}</h2>
   <p>Hi ${recipient.name}, welcome to Guitar Stock Alert.</p>
   <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9f9f9;border-radius:8px">
     <tr><td style="padding:10px 14px;font-weight:600">Plan</td><td style="padding:10px 14px">${planName}</td></tr>
-    <tr><td style="padding:10px 14px;font-weight:600">Amount paid</td><td style="padding:10px 14px">$${amountPaid.toFixed(2)}</td></tr>
-    <tr><td style="padding:10px 14px;font-weight:600">Billing</td><td style="padding:10px 14px">${expiryLine}</td></tr>
+    ${!isTrial ? `<tr><td style="padding:10px 14px;font-weight:600">Amount paid</td><td style="padding:10px 14px">$${amountPaid.toFixed(2)}</td></tr>` : ""}
+    <tr><td style="padding:10px 14px;font-weight:600">Access</td><td style="padding:10px 14px">${expiryLine}</td></tr>
   </table>
   <p>We'll email you every time new products are added to <a href="${STORE_URL}">Guitars Garden</a>.</p>
   <p><strong>To cancel or manage your subscription</strong> — visit the self-service portal at any time:</p>

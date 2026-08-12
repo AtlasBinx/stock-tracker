@@ -20,13 +20,6 @@ export async function POST(req: NextRequest) {
     // Check for existing active subscription
     const existing = await db.subscriber.findUnique({ where: { email } });
     if (existing?.active && existing.planStatus === "active" && !cancelExisting) {
-      if (existing.plan === "monthly" && planKey !== "monthly") {
-        return NextResponse.json({
-          conflict: "monthly",
-          subscriptionId: existing.stripeSubscriptionId,
-          customerId: existing.stripeCustomerId,
-        }, { status: 409 });
-      }
       if (existing.plan === planKey) {
         return NextResponse.json({ error: "You already have this plan active." }, { status: 400 });
       }

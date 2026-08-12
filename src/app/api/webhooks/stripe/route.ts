@@ -5,7 +5,7 @@ import { sendPurchaseConfirmationEmail, sendCancellationConfirmationEmail } from
 import { sendSmsOptInConfirmation, toE164 } from "@/lib/sms";
 import type Stripe from "stripe";
 
-const BOUNTIES: Record<string, number> = { "30day": 2.5, monthly: 2.0, annual: 10.0 };
+const BOUNTIES: Record<string, number> = { "30day": 0.75, annual: 3.0 };
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
