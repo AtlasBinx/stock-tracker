@@ -21,15 +21,15 @@ export async function POST(req: NextRequest) {
 
     const testProducts = [
       {
-        title: "Firefly FFSP Electric Guitar (Example — New)",
-        url: "https://guitarsgarden.com/products/new-firefly-ffsp-electric-guitar-cobra-burst-1",
-        imageUrl: "https://cdn.shopify.com/s/files/1/0633/5515/7655/files/1_d5b7e2d4-13fc-4bb1-a3b1-1c5fdf8e7c4e.jpg",
+        title: "Firefly FF338PRO Full Size Semi Hollow body Electric Guitar （Transparent Blue )",
+        url: "https://guitarsgarden.com/products/firefly-ff338pro-full-size-semi-hollow-body-electric-guitar-transparent-blue",
+        imageUrl: "https://cdn.shopify.com/s/files/1/0211/2667/6580/files/IMG_20240509_20091874545544423_76f682f0-c7d9-4f1c-9308-9bb9b0b438d5.jpg?v=1776505005",
         isNew: true,
       },
       {
-        title: "Firefly FFMN Electric Guitar (Example — Restock)",
-        url: "https://guitarsgarden.com/products/firefly-ffmn-electric-guitar-with-flamed-maple-top-green-burst-color",
-        imageUrl: "https://cdn.shopify.com/s/files/1/0633/5515/7655/files/1_b9e3c2a1-4d5e-4f6b-8c7d-2e1f3a4b5c6d.jpg",
+        title: "Firefly FFMN Electric Guitar Floyd Rose Tremolo (White Color)",
+        url: "https://guitarsgarden.com/products/firefly-ffmn-electric-guitar-with-flamed-maple-top-white-color",
+        imageUrl: "https://cdn.shopify.com/s/files/1/0211/2667/6580/files/IMG_20240509_2009187454554442_398252ce-61e2-49cf-80a8-9fbb9d9175cc.jpg?v=1758847706",
         isNew: false,
       },
     ];
