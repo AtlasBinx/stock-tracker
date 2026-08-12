@@ -276,6 +276,9 @@ export default function SignupPage() {
                   className="w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:ring-2 focus:ring-indigo-500"
                   style={{ backgroundColor: "var(--surface-2)" }}
                 />
+                <div className="mt-2 rounded-lg px-3 py-2 text-xs font-medium text-emerald-400" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+                  ✓ No credit card required. Your 30-day trial starts the moment you hit the button.
+                </div>
                 <p className="mt-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
                   By entering your phone number you agree to receive automated stock alert texts.
                   Msg &amp; data rates may apply. Reply STOP to opt out anytime.
@@ -389,7 +392,7 @@ export default function SignupPage() {
               {status === "loading"
                 ? "Please wait…"
                 : mode === "trial"
-                ? "Start free trial — no card required"
+                ? "Activate free trial — no card, ever"
                 : mode === "annual"
                 ? "Get annual access — $14.99"
                 : "Get 30-day access — $2.99"}
@@ -397,13 +400,16 @@ export default function SignupPage() {
 
             {mode === "trial" && (
               <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
-                Free for 30 days · No credit card · SMS required
+                Free for 30 days · No credit card · No hidden charges
               </p>
             )}
             {isPaid && (
-              <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
-                Secure payment via Stripe · We never see your card details
-              </p>
+              <div className="flex items-center justify-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#6366f1", flexShrink: 0 }}>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Secure payment via <strong className="text-white">Stripe</strong> · We never see your card details
+              </div>
             )}
           </form>
         </div>
