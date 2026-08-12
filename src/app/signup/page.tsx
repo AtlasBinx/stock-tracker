@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [promoCode, setPromoCode] = useState("");
   const [smsConsent, setSmsConsent] = useState(false);
+  const [showPromoInput, setShowPromoInput] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error" | "conflict">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -319,39 +320,27 @@ export default function SignupPage() {
             )}
 
             {/* Referral code — shown for paid plans if ref present, or manually entered */}
-            {isPaid && promoCode && (
+            {isPaid && (showPromoInput || promoCode) ? (
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-300">Referral code</label>
                 <input
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm text-white font-mono outline-none focus:ring-2 focus:ring-indigo-500"
-                  style={{ backgroundColor: "var(--surface-2)" }}
-                />
-              </div>
-            )}
-            {isPaid && !promoCode && (
-              <button
-                type="button"
-                onClick={() => setPromoCode(" ")}
-                className="text-xs text-indigo-400 hover:underline"
-              >
-                Have a referral code?
-              </button>
-            )}
-            {isPaid && promoCode === " " && (
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-300">Referral code</label>
-                <input
-                  value=""
-                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   placeholder="CREATORNAME"
-                  autoFocus
+                  autoFocus={showPromoInput && !promoCode}
                   className="w-full rounded-lg px-3 py-2.5 text-sm text-white font-mono placeholder-gray-500 outline-none focus:ring-2 focus:ring-indigo-500"
                   style={{ backgroundColor: "var(--surface-2)" }}
                 />
               </div>
-            )}
+            ) : isPaid ? (
+              <button
+                type="button"
+                onClick={() => setShowPromoInput(true)}
+                className="text-xs text-indigo-400 hover:underline"
+              >
+                Have a referral code?
+              </button>
+            ) : null}
 
             {/* Billing terms for paid plans */}
             {isPaid && plan && (
