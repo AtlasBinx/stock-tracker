@@ -866,7 +866,7 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
-                    {["Creator", "Code", "Links", "Subs", "Revenue", "Bounty Owed", "Status"].map((h) => (
+                    {["Creator", "Code", "Links", "Subs", "Revenue", "Bounty Owed", "Status", ""].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
                     ))}
                   </tr>
@@ -886,6 +886,9 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${a.active ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/30" : "bg-red-500/10 text-red-400 ring-red-500/30"}`}>
                           {a.active ? "Active" : "Inactive"}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <AffiliateActions id={a.id} code={a.code} active={a.active} onRefresh={onRefresh} />
                       </td>
                     </tr>
                   ))}
@@ -931,6 +934,56 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
           Tracking only — no discount is applied to the subscriber. Share as a typed code or link: <span className="text-indigo-400">/signup?ref=CODE</span>
         </p>
       </div>
+    </div>
+  );
+}
+
+function AffiliateActions({ id, code, active, onRefresh }: { id: number; code: string; active: boolean; onRefresh: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleToggle() {
+    const action = active ? "deactivate" : "reactivate";
+    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ${code}? Their creator kit link will ${active ? "stop working" : "work again"}.`)) return;
+    setLoading(true);
+    await fetch(`/api/admin/affiliates/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !active }),
+    });
+    setLoading(false);
+    onRefresh();
+  }
+
+  async function handleDelete() {
+    if (!confirm(`Permanently delete ${code}? This cannot be undone and will remove all conversion history.`)) return;
+    setLoading(true);
+    await fetch(`/api/admin/affiliates/${id}`, { method: "DELETE" });
+    setLoading(false);
+    onRefresh();
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <button
+        onClick={handleToggle}
+        disabled={loading}
+        className="rounded px-2 py-0.5 text-xs font-medium transition disabled:opacity-50"
+        style={{
+          backgroundColor: active ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)",
+          color: active ? "#fbbf24" : "#34d399",
+          border: active ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(16,185,129,0.3)",
+        }}
+      >
+        {active ? "Deactivate" : "Reactivate"}
+      </button>
+      <button
+        onClick={handleDelete}
+        disabled={loading}
+        className="rounded px-2 py-0.5 text-xs font-medium transition disabled:opacity-50"
+        style={{ backgroundColor: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}
+      >
+        Delete
+      </button>
     </div>
   );
 }
