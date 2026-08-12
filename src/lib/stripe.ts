@@ -61,4 +61,4 @@ export function getPriceId(plan: PlanKey): string {
 }
 
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://stock-tracker-seven-delta.vercel.app";
+  process.env.NEXT_PUBLIC_BASE_URL ?? "https://guitarstockalert.com";
