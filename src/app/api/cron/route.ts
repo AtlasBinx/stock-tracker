@@ -15,8 +15,18 @@ export async function GET(req: Request) {
   // Sync products
   const result = await syncGuitarsGarden();
 
-  // Send expiry reminders to subscribers whose access ends in 2–4 days (haven't been sent one yet)
   const now = new Date();
+
+  // Deactivate subscribers whose access has expired
+  await db.subscriber.updateMany({
+    where: {
+      active: true,
+      accessExpiresAt: { lt: now },
+    },
+    data: { active: false, planStatus: "expired" },
+  });
+
+  // Send expiry reminders to subscribers whose access ends in 2–4 days (haven't been sent one yet)
   const in2Days = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
   const in4Days = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
 

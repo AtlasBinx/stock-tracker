@@ -183,27 +183,38 @@ export async function sendExpiryReminderEmail(
   const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
 
   const planConfig = PLANS[plan as PlanKey];
-  const planName = planConfig?.name ?? plan;
+  const isTrial = plan === "trial";
+  const planName = isTrial ? "Free Trial" : (planConfig?.name ?? plan);
   const expiryDate = expiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
   await resend.emails.send({
     from: FROM,
     to: recipient.email,
-    subject: `Your Guitar Stock Alert access ends in 3 days`,
+    subject: isTrial ? `Your free trial ends in 3 days — keep your alerts for $14.99/yr` : `Your Guitar Stock Alert access ends in 3 days`,
     html: `
 <!DOCTYPE html>
 <html>
 <body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
-  <h2 style="margin:0 0 8px">Your access ends in 3 days</h2>
+  <h2 style="margin:0 0 8px">${isTrial ? "Your free trial ends in 3 days" : "Your access ends in 3 days"}</h2>
   <p>Hi ${recipient.name},</p>
-  <p>Just a heads up — your <strong>${planName}</strong> access to Guitar Stock Alert expires on:</p>
+  ${isTrial
+    ? `<p>Your free trial expires on:</p>`
+    : `<p>Just a heads up — your <strong>${planName}</strong> access to Guitar Stock Alert expires on:</p>`
+  }
   <p style="font-size:20px;font-weight:700;text-align:center;padding:16px;background:#f5f5f5;border-radius:8px;margin:20px 0">${expiryDate}</p>
-  <p>After that date you'll stop receiving stock alerts from us. If you'd like to keep getting alerts when new guitars hit the store, you can resubscribe now:</p>
-  <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:8px 0">
-    Resubscribe →
-  </a>
+  ${isTrial
+    ? `<p>After that you'll stop receiving alerts when new guitars drop at Guitars Garden. Lock in a full year of alerts for just <strong>$14.99</strong> — that's $1.25/month.</p>
+       <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:8px 0">
+         Keep my alerts — $14.99/year →
+       </a>
+       <p style="font-size:13px;color:#555;margin-top:12px">Or grab a 30-day pass for $2.99 if you're not ready to commit.</p>`
+    : `<p>After that date you'll stop receiving stock alerts from us. Resubscribe to keep getting alerts:</p>
+       <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:8px 0">
+         Resubscribe →
+       </a>`
+  }
   <p style="font-size:12px;color:#999;margin-top:32px">
-    If you don't renew, your access simply ends on ${expiryDate} — no action needed and no further charges.
+    If you don't upgrade, your access simply ends on ${expiryDate} — no action needed and no charges.
     <a href="${APP_URL}/account" style="color:#6366f1">View your account →</a>
   </p>
 </body>
