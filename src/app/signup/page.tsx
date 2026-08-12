@@ -110,7 +110,7 @@ export default function SignupPage() {
           Be first when<br />Guitars Garden drops
         </h1>
         <p className="text-lg max-w-md mx-auto mb-2" style={{ color: "var(--text-muted)" }}>
-          Get a <strong className="text-white">text message</strong> the second new guitars hit the store.
+          Get a <strong className="text-white">text message and email</strong> the second new guitars hit the store.
           Never miss a drop again.
         </p>
         {hasTrial ? (
@@ -130,7 +130,7 @@ export default function SignupPage() {
           {[
             { step: "1", title: "Sign up", body: "Takes 30 seconds. No commitment." },
             { step: "2", title: "We watch 24/7", body: "Our scanner checks Guitars Garden every hour, day and night." },
-            { step: "3", title: "You get the text", body: "The second something drops, you're first to know." },
+            { step: "3", title: "You get the alert", body: "Email every time. Add your phone for an instant text the second it drops." },
           ].map(({ step, title, body }) => (
             <div key={step} className="rounded-xl p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
               <div className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center mx-auto mb-3">
@@ -349,6 +349,7 @@ export default function SignupPage() {
                   <p className="font-medium mb-2">Order summary — {plan.name}</p>
                   <ul className="space-y-1 text-xs" style={{ color: "var(--text-muted)" }}>
                     <li>• <strong className="text-white">${plan.price}</strong> charged once for {plan.billing} of access</li>
+                    <li>• Email alerts included · Add your phone for instant SMS alerts</li>
                     <li>• <strong className="text-emerald-400">No automatic renewal. No future charges.</strong></li>
                     <li>• Manage your account at <span className="text-indigo-400">guitarstockalert.com/account</span></li>
                   </ul>
