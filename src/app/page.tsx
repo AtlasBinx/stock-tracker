@@ -865,7 +865,7 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
-                    {["Creator", "Code", "Subs", "Revenue", "Bounty Owed", "Status"].map((h) => (
+                    {["Creator", "Code", "Signup Link", "Subs", "Revenue", "Bounty Owed", "Status"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{h}</th>
                     ))}
                   </tr>
@@ -875,6 +875,9 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
                     <tr key={a.id} style={{ backgroundColor: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)", borderBottom: i < affiliates.length - 1 ? "1px solid var(--border)" : undefined }}>
                       <td className="px-4 py-3 font-medium whitespace-nowrap">{a.creatorName}</td>
                       <td className="px-4 py-3 font-mono text-indigo-400">{a.code}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <CopyLink code={a.code} />
+                      </td>
                       <td className="px-4 py-3 tabular-nums">{a[period].subs}</td>
                       <td className="px-4 py-3 tabular-nums text-emerald-400">${a[period].revenue.toFixed(2)}</td>
                       <td className="px-4 py-3 tabular-nums text-amber-400">${a[period].bounty.toFixed(2)}</td>
@@ -927,6 +930,37 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
           Tracking only — no discount is applied to the subscriber. Share as a typed code or link: <span className="text-indigo-400">/signup?ref=CODE</span>
         </p>
       </div>
+    </div>
+  );
+}
+
+function CopyLink({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = `https://guitarstockalert.com/signup?ref=${code}`;
+
+  function handleCopy() {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-mono truncate max-w-[180px]" style={{ color: "var(--text-muted)" }}>
+        /signup?ref={code}
+      </span>
+      <button
+        onClick={handleCopy}
+        className="shrink-0 rounded px-2 py-0.5 text-xs font-medium transition"
+        style={{
+          backgroundColor: copied ? "rgba(16,185,129,0.1)" : "rgba(99,102,241,0.1)",
+          color: copied ? "#34d399" : "#818cf8",
+          border: copied ? "1px solid rgba(16,185,129,0.3)" : "1px solid rgba(99,102,241,0.3)",
+        }}
+      >
+        {copied ? "✓ Copied" : "Copy"}
+      </button>
     </div>
   );
 }
