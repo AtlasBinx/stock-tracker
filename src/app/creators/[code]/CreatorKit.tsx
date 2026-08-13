@@ -202,12 +202,12 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
           </button>
         </div>
         <p style={{ fontSize: "13px", color: "var(--text-muted)", fontFamily: "'Trebuchet MS', Arial, sans-serif" }}>
-          Anyone who signs up through your link gets a free 30-day trial — no credit card required. Your bounty is paid when they choose a plan at the end of that trial. No card, no friction for your audience upfront.
+          Anyone who signs up through your link gets a free 30-day trial — no credit card required. Your bounty is paid when they choose a plan at the end of that trial.
         </p>
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "56px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "16px" }}>
         {[
           { value: "30", label: "Free days your audience gets through your link" },
           { value: "$5 / 33%", label: "Bounty per annual conversion ($14.99/yr plan)" },
@@ -237,12 +237,31 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
         ))}
       </div>
 
+      {/* Payout note */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        background: "rgba(240,165,0,0.07)",
+        border: "1px solid rgba(240,165,0,0.25)",
+        borderRadius: "8px",
+        padding: "12px 16px",
+        marginBottom: "56px",
+        fontSize: "13px",
+        color: "var(--text-muted)",
+        fontFamily: "'Trebuchet MS', Arial, sans-serif",
+        lineHeight: 1.5,
+      }}>
+        <span style={{ color: "#F0A500", fontSize: "16px", flexShrink: 0 }}>💸</span>
+        <span>Payouts are <strong style={{ color: "var(--text)" }}>biweekly</strong>, with <strong style={{ color: "var(--text)" }}>no minimum threshold</strong>. We'll pay you via your preferred method — just let us know when you reach out. <strong style={{ color: "var(--text)" }}>30-day attribution window</strong> — if someone clicks your link and signs up within 30 days, you get credit.</span>
+      </div>
+
       {/* YouTube */}
       <Section title="YouTube" tag="Description + Comments" />
 
-      <CopyBlock label="Video Description Blurb" text={`🎸 Never miss a Guitars Garden drop again\nGet instant text + email alerts the second new guitars hit the store.\nUse my link for a FREE 30-day trial — no credit card required:\n➡ ${signupUrl}\n\nGuitars Garden drops sell out fast. This is how I stay first in line.`} />
+      <CopyBlock label="Video Description Blurb" text={`🎸 Never miss a Guitars Garden drop again\nGet text + email alerts as soon as new guitars hit the store — monitored around the clock.\nUse my link for a FREE 30-day trial — no credit card required:\n➡ ${signupUrl}\n\nGuitars Garden drops sell out fast. This is how I stay first in line.`} />
       <CopyBlock label="Pinned Comment" text={`👆 Link in the description for 30 days FREE — Guitars Garden drops move fast, this is how I never miss one 🎸`} />
-      <CopyBlock label="End Screen Script (spoken)" text={`Before you go — if you shop at Guitars Garden, do yourself a favor and grab the link in the description. It's a free alert service, you get 30 days free through my link, and it'll text you the second something new drops. No card, nothing to cancel. Link is down below.`} />
+      <CopyBlock label="End Screen Script (spoken)" text={`Before you go — if you shop at Guitars Garden, do yourself a favor and grab the link in the description. It's a free alert service, you get 30 days free through my link, and it'll text you as soon as something new drops. No card required, nothing to cancel during your trial. Link is down below.`} />
 
       <Divider />
 
@@ -272,7 +291,7 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
       {/* Instagram / Facebook */}
       <Section title="Instagram & Facebook" tag="Long-Form Post" />
 
-      <CopyBlock label="Full Post" text={`🎸 If you shop at Guitars Garden, you need to know about this.\n\nThey drop new guitars regularly — sometimes multiple times a month — and the good ones go fast. I've started using Guitar Stock Alert, and it texts me the second something new hits the store.\n\nNo more refreshing the page. No more finding out after it's gone.\n\nThrough my link you get 30 days completely free — no credit card, nothing to cancel. After that it's $14.99 for the whole year. That's $1.25 a month.\n\nLink in bio → ${signupUrl}\n\n#guitar #budgetguitar #guitarsgarden #guitardeals #electricguitar #guitarcommunity`} />
+      <CopyBlock label="Full Post" text={`🎸 If you shop at Guitars Garden, you need to know about this.\n\nThey drop new guitars regularly — sometimes multiple times a month — and the good ones go fast. I've started using Guitar Stock Alert, and it texts me as soon as something new hits the store.\n\nNo more refreshing the page. No more finding out after it's gone.\n\nThrough my link you get 30 days completely free — no credit card, nothing to cancel during the trial. After that it's $14.99 for the whole year ($1.25/month), or $5.99 for a 30-day pass if you want to try it paid first.\n\nLink in bio → ${signupUrl}\n\n#guitar #budgetguitar #guitarsgarden #guitardeals #electricguitar #guitarcommunity`} />
 
       <Divider />
 
@@ -288,8 +307,8 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
       <Section title="Video Scripts" tag="Plug Scripts" />
 
       <CopyBlock label="15-Second Plug" text={`Real quick — if you shop at Guitars Garden, grab the link in the description. It texts you the second they drop new stock. My link gets you 30 days free, no card required. Link below.`} />
-      <CopyBlock label="30-Second Plug" text={`This video is sponsored by Guitar Stock Alert — and honestly it's something I'd actually use. If you shop at Guitars Garden, you know how fast their drops sell out. This service watches the store 24/7 and texts you the second something new hits. Email too, but the text is the thing — you're first in line before most people even know it dropped. Through my link in the description you get 30 days completely free, no credit card. After that it's $14.99 for the year — basically nothing. Link is below.`} />
-      <CopyBlock label="60-Second Plug" text={`Before we get into it, shoutout to today's sponsor — Guitar Stock Alert. So here's the deal: if you've ever gone to Guitars Garden and seen something sold out that you had no idea even dropped, this is the fix.\n\nGuitar Stock Alert monitors the store around the clock and the second a new guitar appears — or something comes back in stock — it sends you a text message and an email. Not a daily digest, not a newsletter. A real-time alert the moment it happens.\n\nI've been using it and honestly the text is the killer feature. You're notified before most people even have the tab open.\n\nThrough my link in the description you get 30 days completely free — no credit card, nothing to cancel. If you want to keep going after that it's $14.99 for the full year. That's $1.25 a month.\n\nLink is in the description. Guitarstockalert.com through my link. Okay — let's get into the video.`} />
+      <CopyBlock label="30-Second Plug" text={`This video is sponsored by Guitar Stock Alert — and honestly it's something I'd actually use. If you shop at Guitars Garden, you know how fast their drops sell out. This service watches the store around the clock and texts you as soon as something new hits. Email too, but the text is the thing — you're first in line before most people even know it dropped. Through my link in the description you get 30 days completely free, no credit card. After that it's $14.99 for the year, or $5.99 for a 30-day pass if you're not ready to commit. Link is below.`} />
+      <CopyBlock label="60-Second Plug" text={`Before we get into it, shoutout to today's sponsor — Guitar Stock Alert. So here's the deal: if you've ever gone to Guitars Garden and seen something sold out that you had no idea even dropped, this is the fix.\n\nGuitar Stock Alert monitors the store around the clock and as soon as a new guitar appears — or something comes back in stock — it sends you a text message and an email. Not a daily digest, not a newsletter. An alert as soon as it happens.\n\nI've been using it and honestly the text is the killer feature. You're first in line before most people even have the tab open.\n\nThrough my link in the description you get 30 days completely free — no credit card, nothing to cancel during your trial. If you want to keep going after that it's $14.99 for the full year — that's $1.25 a month — or $5.99 for a 30-day pass if you're not ready to commit to a year.\n\nLink is in the description. Guitarstockalert.com through my link. Okay — let's get into the video.`} />
 
       <Divider />
 
@@ -297,7 +316,7 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
       <Section title="Email Newsletter" tag="For Creators with Lists" />
 
       <CopyBlock label="Subject Line Options (pick one)" text={`Option A: Never be late to a Guitars Garden drop again\nOption B: How I stay first in line at Guitars Garden\nOption C: Free 30 days — Guitars Garden stock alerts`} />
-      <CopyBlock label="Email Body" text={`Hey —\n\nQuick one this week. If you shop at Guitars Garden, I want to tell you about something I've been using.\n\nIt's called Guitar Stock Alert. It monitors Guitars Garden around the clock and sends you a text message and email the second new guitars drop — or anything comes back in stock.\n\nGuitars Garden drops can be gone same day. This puts you at the front of the line.\n\nThrough my link you get 30 days completely free. No credit card. No catch.\n\n→ ${signupUrl}\n\nAfter 30 days it's $14.99 for the full year if you want to keep it. That's $1.25 a month.\n\nWorth it if you've ever missed a drop you wanted.\n\n— [YOUR NAME]`} />
+      <CopyBlock label="Email Body" text={`Hey —\n\nQuick one this week. If you shop at Guitars Garden, I want to tell you about something I've been using.\n\nIt's called Guitar Stock Alert. It monitors Guitars Garden around the clock and sends you a text message and email as soon as new guitars drop — or anything comes back in stock.\n\nGuitars Garden drops can be gone same day. This puts you at the front of the line.\n\nThrough my link you get 30 days completely free. No credit card. No catch.\n\n→ ${signupUrl}\n\nAfter 30 days it's $14.99 for the full year if you want to keep it ($1.25/month). Or $5.99 for a 30-day pass if you're not ready to commit to a year.\n\nWorth it if you've ever missed a drop you wanted.\n\n— [YOUR NAME]`} />
 
       <Divider />
 
@@ -317,9 +336,10 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
             "The service checks the store every hour, around the clock, 365 days.",
             "You get an email every time, plus an instant text if you add your phone number.",
             "The text is the real value — you know before most people even have the page open.",
-            "Your link unlocks a free 30-day trial. No credit card, nothing to cancel.",
+            "Your link unlocks a free 30-day trial. They'll ask for a phone number — that's how the alerts are delivered. No credit card, nothing to auto-charge.",
             "After the trial it's $14.99 for a full year. Less than $1.25 a month.",
             "They also have a $5.99 option for 30 days if someone wants to try paid without committing to a year.",
+            "30-day attribution window — if someone clicks your link and signs up anytime within the next 30 days, that conversion is credited to you.",
           ].map((point) => (
             <li key={point} style={{ display: "flex", gap: "12px", fontSize: "15px", lineHeight: 1.55 }}>
               <span style={{ color: "#F0A500", fontWeight: 700, flexShrink: 0, fontFamily: "'Trebuchet MS', Arial, sans-serif" }}>—</span>
@@ -342,8 +362,9 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
           { q: '"Is it really free? What\'s the catch?"', a: '30 days free through your link, no credit card required. After 30 days your alerts pause unless you subscribe. Nothing auto-charges.' },
           { q: '"What if nothing drops for a few weeks?"', a: "You'll still get notified when guitars come back in stock, not just new drops. And when drop season hits — especially fall — you'll be very glad you have it." },
           { q: '"Is this just for Guitars Garden?"', a: "Right now yes — it's purpose-built for Guitars Garden. That focus is what makes it actually useful instead of generic." },
-          { q: '"Do I have to give my phone number?"', a: "For the free trial through your link, yes — the phone number is how you get the instant text alerts, which is the main value. You can opt out of texts at any time by replying STOP." },
+          { q: '"Do I have to give my phone number?"', a: "Yes — a phone number is required to activate the free trial. It's how the alerts are delivered, which is the core value of the service. You can stop texts at any time by replying STOP, but a number is needed to sign up." },
           { q: '"How do I cancel?"', a: "Go to guitarstockalert.com/account, enter your email, and manage everything there. No phone call, no email, fully self-service." },
+          { q: '"What if someone clicks my link but signs up later?"', a: "You still get credit. Your link carries a 30-day attribution window — anyone who clicks it and signs up within 30 days counts as your conversion." },
         ].map(({ q, a }, i, arr) => (
           <div key={q} style={{ borderBottom: "1px solid var(--border)", padding: "18px 0", borderTop: i === 0 ? "1px solid var(--border)" : undefined }}>
             <p style={{ fontFamily: "'Trebuchet MS', Arial, sans-serif", fontSize: "15px", fontWeight: 700, marginBottom: "6px" }}>{q}</p>
