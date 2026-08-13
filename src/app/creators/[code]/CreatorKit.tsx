@@ -110,6 +110,14 @@ const Divider = () => (
 
 export default function CreatorKit({ code, creatorName }: { code: string; creatorName: string }) {
   const signupUrl = `https://guitarstockalert.com/signup?ref=${code}`;
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  function copyLink() {
+    navigator.clipboard.writeText(signupUrl).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  }
 
   return (
     <div style={{ maxWidth: "720px", margin: "0 auto", padding: "0 24px 80px" }}>
@@ -162,15 +170,37 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
         }}>
           Your unique signup link
         </p>
-        <p style={{
-          fontFamily: "'Courier New', Courier, monospace",
-          fontSize: "18px",
-          fontWeight: 700,
-          wordBreak: "break-all",
-          marginBottom: "10px",
-        }}>
-          {signupUrl}
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px", flexWrap: "wrap" }}>
+          <p style={{
+            fontFamily: "'Courier New', Courier, monospace",
+            fontSize: "18px",
+            fontWeight: 700,
+            wordBreak: "break-all",
+            margin: 0,
+            flex: 1,
+          }}>
+            {signupUrl}
+          </p>
+          <button
+            onClick={copyLink}
+            style={{
+              fontFamily: "'Trebuchet MS', Arial, sans-serif",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase" as const,
+              background: linkCopied ? "#22c55e" : "#F0A500",
+              color: linkCopied ? "#fff" : "#0E1520",
+              border: "none",
+              borderRadius: "6px",
+              padding: "7px 14px",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            {linkCopied ? "Copied!" : "Copy"}
+          </button>
+        </div>
         <p style={{ fontSize: "13px", color: "var(--text-muted)", fontFamily: "'Trebuchet MS', Arial, sans-serif" }}>
           Anyone who signs up through your link gets a free 30-day trial. You earn a bounty on every paid conversion — no card, no friction for your audience.
         </p>
