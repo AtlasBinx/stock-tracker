@@ -209,7 +209,7 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "16px" }}>
         {[
-          { value: "30", label: "Free days your audience gets through your link" },
+          { value: "30 Free Days", label: "Your audience gets through your link" },
           { value: "$5 / 33%", label: "Bounty per annual conversion ($14.99/yr plan)" },
           { value: "$2 / 33%", label: "Bounty per 30-day pass conversion ($5.99)" },
         ].map(({ value, label }) => (
