@@ -265,7 +265,44 @@ export default function DashboardPage() {
           <SubscriberTable subscribers={subscribers} onRemove={handleUnsubscribe} />
         </div>
       ) : (
-      /* ── Two-column layout ── */
+      <>
+      {/* ── Sync history (changes only) ── */}
+      {(() => {
+        const changedSyncs = syncs.filter(s => s.added + s.removed + s.wentInStock + s.wentOutOfStock > 0).slice(0, 10);
+        if (changedSyncs.length === 0) return null;
+        return (
+          <div className="mb-6 overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between px-4 py-2.5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Recent Changes</span>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>Syncs with no changes are hidden</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
+                    {["Time", "Added", "Removed", "→ In Stock", "→ Out of Stock"].map((h) => (
+                      <th key={h} className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {changedSyncs.map((s, i) => (
+                    <tr key={s.id} style={{ borderBottom: i < changedSyncs.length - 1 ? "1px solid var(--border)" : undefined }}>
+                      <td className="px-4 py-2 tabular-nums text-xs" style={{ color: "var(--text-muted)" }}>{new Date(s.checkedAt).toLocaleString()}</td>
+                      <td className="px-4 py-2 tabular-nums text-emerald-400">{s.added > 0 ? `+${s.added}` : "—"}</td>
+                      <td className="px-4 py-2 tabular-nums text-red-400">{s.removed > 0 ? `-${s.removed}` : "—"}</td>
+                      <td className="px-4 py-2 tabular-nums text-blue-400">{s.wentInStock > 0 ? s.wentInStock : "—"}</td>
+                      <td className="px-4 py-2 tabular-nums text-amber-400">{s.wentOutOfStock > 0 ? s.wentOutOfStock : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Two-column layout ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
         {/* Product catalog — takes 2/3 width */}
@@ -317,47 +354,8 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      </>
 
-      )}
-
-      {/* ── Sync history ── */}
-      {syncs.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-3 font-semibold">Sync History</h2>
-          <div className="overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
-                  {["Time", "Products", "Added", "Removed", "→ In Stock", "→ Out of Stock"].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {syncs.map((s, i) => (
-                  <tr
-                    key={s.id}
-                    style={{
-                      backgroundColor: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)",
-                      borderBottom: i < syncs.length - 1 ? "1px solid var(--border)" : undefined,
-                    }}
-                  >
-                    <td className="px-4 py-2.5 tabular-nums" style={{ color: "var(--text-muted)" }}>
-                      {new Date(s.checkedAt).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-2.5 tabular-nums">{s.totalProducts}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-emerald-400">{s.added > 0 ? `+${s.added}` : "—"}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-red-400">{s.removed > 0 ? `-${s.removed}` : "—"}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-blue-400">{s.wentInStock > 0 ? s.wentInStock : "—"}</td>
-                    <td className="px-4 py-2.5 tabular-nums text-amber-400">{s.wentOutOfStock > 0 ? s.wentOutOfStock : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
       )}
     </div>
   );
