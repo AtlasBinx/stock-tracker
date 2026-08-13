@@ -202,7 +202,7 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
           </button>
         </div>
         <p style={{ fontSize: "13px", color: "var(--text-muted)", fontFamily: "'Trebuchet MS', Arial, sans-serif" }}>
-          Anyone who signs up through your link gets a free 30-day trial. You earn a bounty on every paid conversion — no card, no friction for your audience.
+          Anyone who signs up through your link gets a free 30-day trial — no credit card required. Your bounty is paid when they choose a plan at the end of that trial. No card, no friction for your audience upfront.
         </p>
       </div>
 
