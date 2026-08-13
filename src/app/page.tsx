@@ -269,35 +269,40 @@ export default function DashboardPage() {
       {/* ── Sync history (changes only) ── */}
       {(() => {
         const changedSyncs = syncs.filter(s => s.added + s.removed + s.wentInStock + s.wentOutOfStock > 0).slice(0, 10);
-        if (changedSyncs.length === 0) return null;
         return (
           <div className="mb-6 overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-4 py-2.5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Recent Changes</span>
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>Syncs with no changes are hidden</span>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>Last 10 syncs with changes</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
-                    {["Time", "Added", "Removed", "→ In Stock", "→ Out of Stock"].map((h) => (
-                      <th key={h} className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {changedSyncs.map((s, i) => (
-                    <tr key={s.id} style={{ borderBottom: i < changedSyncs.length - 1 ? "1px solid var(--border)" : undefined }}>
-                      <td className="px-4 py-2 tabular-nums text-xs" style={{ color: "var(--text-muted)" }}>{new Date(s.checkedAt).toLocaleString()}</td>
-                      <td className="px-4 py-2 tabular-nums text-emerald-400">{s.added > 0 ? `+${s.added}` : "—"}</td>
-                      <td className="px-4 py-2 tabular-nums text-red-400">{s.removed > 0 ? `-${s.removed}` : "—"}</td>
-                      <td className="px-4 py-2 tabular-nums text-blue-400">{s.wentInStock > 0 ? s.wentInStock : "—"}</td>
-                      <td className="px-4 py-2 tabular-nums text-amber-400">{s.wentOutOfStock > 0 ? s.wentOutOfStock : "—"}</td>
+            {changedSyncs.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>No changes detected yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
+                      {["Time", "Added", "Removed", "→ In Stock", "→ Out of Stock"].map((h) => (
+                        <th key={h} className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {changedSyncs.map((s, i) => (
+                      <tr key={s.id} style={{ borderBottom: i < changedSyncs.length - 1 ? "1px solid var(--border)" : undefined }}>
+                        <td className="px-4 py-2 tabular-nums text-xs" style={{ color: "var(--text-muted)" }}>{new Date(s.checkedAt).toLocaleString()}</td>
+                        <td className="px-4 py-2 tabular-nums text-emerald-400">{s.added > 0 ? `+${s.added}` : "—"}</td>
+                        <td className="px-4 py-2 tabular-nums text-red-400">{s.removed > 0 ? `-${s.removed}` : "—"}</td>
+                        <td className="px-4 py-2 tabular-nums text-blue-400">{s.wentInStock > 0 ? s.wentInStock : "—"}</td>
+                        <td className="px-4 py-2 tabular-nums text-amber-400">{s.wentOutOfStock > 0 ? s.wentOutOfStock : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         );
       })()}
