@@ -14,8 +14,8 @@ function CopyBlock({ label, text }: { label: string; text: string }) {
 
   return (
     <div style={{
-      background: "var(--copy-bg, #F9F7F3)",
-      border: "1px solid var(--copy-border, #E8E3DA)",
+      background: "var(--surface-2)",
+      border: "1px solid var(--border)",
       borderLeft: "4px solid #F0A500",
       borderRadius: "0 10px 10px 0",
       marginBottom: "20px",
@@ -27,7 +27,7 @@ function CopyBlock({ label, text }: { label: string; text: string }) {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "10px 16px",
-        borderBottom: "1px solid var(--copy-border, #E8E3DA)",
+        borderBottom: "1px solid var(--border)",
         gap: "12px",
       }}>
         <span style={{
@@ -94,7 +94,7 @@ function Section({ title, tag }: { title: string; tag: string }) {
         letterSpacing: "0.1em",
         textTransform: "uppercase" as const,
         background: "rgba(240,165,0,0.12)",
-        color: "#8A5F00",
+        color: "#F0A500",
         padding: "3px 10px",
         borderRadius: "100px",
       }}>
@@ -274,7 +274,7 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
       {/* Talking Points */}
       <div style={{ display: "flex", alignItems: "center", gap: "14px", margin: "0 0 24px" }}>
         <span style={{ fontFamily: "'Trebuchet MS', Arial, sans-serif", fontSize: "22px", fontWeight: 800, letterSpacing: "-0.02em" }}>Talking Points</span>
-        <span style={{ fontFamily: "'Trebuchet MS', Arial, sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, background: "rgba(240,165,0,0.12)", color: "#8A5F00", padding: "3px 10px", borderRadius: "100px" }}>Know This Cold</span>
+        <span style={{ fontFamily: "'Trebuchet MS', Arial, sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, background: "rgba(240,165,0,0.12)", color: "#F0A500", padding: "3px 10px", borderRadius: "100px" }}>Know This Cold</span>
       </div>
 
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "28px 32px", marginBottom: "20px" }}>
@@ -304,7 +304,7 @@ export default function CreatorKit({ code, creatorName }: { code: string; creato
       {/* FAQ */}
       <div style={{ display: "flex", alignItems: "center", gap: "14px", margin: "0 0 24px" }}>
         <span style={{ fontFamily: "'Trebuchet MS', Arial, sans-serif", fontSize: "22px", fontWeight: 800, letterSpacing: "-0.02em" }}>FAQ</span>
-        <span style={{ fontFamily: "'Trebuchet MS', Arial, sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, background: "rgba(240,165,0,0.12)", color: "#8A5F00", padding: "3px 10px", borderRadius: "100px" }}>Common Questions</span>
+        <span style={{ fontFamily: "'Trebuchet MS', Arial, sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, background: "rgba(240,165,0,0.12)", color: "#F0A500", padding: "3px 10px", borderRadius: "100px" }}>Common Questions</span>
       </div>
 
       <div>
