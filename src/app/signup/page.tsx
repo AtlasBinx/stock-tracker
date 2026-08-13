@@ -181,7 +181,7 @@ export default function SignupPage() {
           >
             <p className="font-semibold text-sm">30-Day Pass</p>
             <p className="text-xl font-bold mt-1">
-              $2.99
+              $5.99
               <span className="text-xs font-normal ml-1" style={{ color: "var(--text-muted)" }}>/ 30 days</span>
             </p>
             <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>

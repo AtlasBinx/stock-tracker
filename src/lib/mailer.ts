@@ -196,7 +196,7 @@ export async function sendTrialExpiredEmail(
     Stay in the loop — $14.99/year →
   </a>
   <p style="font-size:13px;color:#555;margin-top:8px">
-    Not ready for a year? Grab a <a href="${APP_URL}/signup" style="color:#4f46e5">30-day pass for $2.99</a> and jump back in anytime.
+    Not ready for a year? Grab a <a href="${APP_URL}/signup" style="color:#4f46e5">30-day pass for $5.99</a> and jump back in anytime.
   </p>
   <p style="font-size:12px;color:#999;margin-top:32px">
     No action needed if you'd rather not continue — you won't be charged anything.
@@ -241,7 +241,7 @@ export async function sendExpiryReminderEmail(
        <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:8px 0">
          Keep my alerts — $14.99/year →
        </a>
-       <p style="font-size:13px;color:#555;margin-top:12px">Or grab a 30-day pass for $2.99 if you're not ready to commit.</p>`
+       <p style="font-size:13px;color:#555;margin-top:12px">Or grab a 30-day pass for $5.99 if you're not ready to commit.</p>`
     : `<p>After that date you'll stop receiving stock alerts from us. Resubscribe to keep getting alerts:</p>
        <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:8px 0">
          Resubscribe →
