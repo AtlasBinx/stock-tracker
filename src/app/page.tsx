@@ -640,10 +640,11 @@ function SubscriberTracker({ subscribers }: { subscribers: Subscriber[] }) {
       {/* Tab content */}
       <div className="p-4">
         {trackerTab === "growth" && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Metric label="Today"      value={newToday} />
             <Metric label="This Week"  value={newWeek} />
             <Metric label="This Month" value={newMonth} />
+            <Metric label="All Time"   value={realSubs.length} />
           </div>
         )}
 
