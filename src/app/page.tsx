@@ -788,7 +788,7 @@ function MessagingPanel({
 }
 
 function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[]; onRefresh: () => void }) {
-  const [newCode, setNewCode] = useState({ code: "", creatorName: "" });
+  const [newCode, setNewCode] = useState({ code: "", creatorName: "", email: "", phone: "" });
   const [creating, setCreating] = useState(false);
   const [msg, setMsg] = useState("");
   const [period, setPeriod] = useState<"weekly" | "monthly" | "ytd" | "allTime">("monthly");
@@ -805,7 +805,7 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
     const data = await res.json();
     if (res.ok) {
       setMsg(`✓ Created ${data.code}`);
-      setNewCode({ code: "", creatorName: "" });
+      setNewCode({ code: "", creatorName: "", email: "", phone: "" });
       onRefresh();
     } else {
       setMsg(`Error: ${data.error}`);
@@ -924,6 +924,29 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
               value={newCode.creatorName}
               onChange={(e) => setNewCode((f) => ({ ...f, creatorName: e.target.value }))}
               placeholder="Sarah Smith"
+              className="rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{ backgroundColor: "var(--surface-2)" }}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-400">Email</label>
+            <input
+              required
+              type="email"
+              value={newCode.email}
+              onChange={(e) => setNewCode((f) => ({ ...f, email: e.target.value }))}
+              placeholder="sarah@example.com"
+              className="rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              style={{ backgroundColor: "var(--surface-2)" }}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-gray-400">Phone (optional)</label>
+            <input
+              type="tel"
+              value={newCode.phone}
+              onChange={(e) => setNewCode((f) => ({ ...f, phone: e.target.value }))}
+              placeholder="555-867-5309"
               className="rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
               style={{ backgroundColor: "var(--surface-2)" }}
             />

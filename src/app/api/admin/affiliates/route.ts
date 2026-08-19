@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/auth";
+import { sendAffiliateWelcomeEmail } from "@/lib/mailer";
+import { sendSmsOptInConfirmation } from "@/lib/sms";
 
 export const dynamic = "force-dynamic";
 
@@ -40,9 +42,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   if (!isAdminRequest(req)) return unauthorizedResponse();
-  const { code, creatorName } = await req.json();
-  if (!code || !creatorName) {
-    return NextResponse.json({ error: "code and creatorName required" }, { status: 400 });
+  const { code, creatorName, email, phone } = await req.json();
+  if (!code || !creatorName || !email) {
+    return NextResponse.json({ error: "code, creatorName, and email required" }, { status: 400 });
   }
 
   const upperCode = code.toUpperCase();
@@ -53,8 +55,34 @@ export async function POST(req: NextRequest) {
   }
 
   const affiliateCode = await db.affiliateCode.create({
-    data: { code: upperCode, creatorName },
+    data: { code: upperCode, creatorName, email, phone: phone || null },
   });
+
+  // Create or update their subscriber record with permanent free access
+  await db.subscriber.upsert({
+    where: { email },
+    create: {
+      name: creatorName,
+      email,
+      phone: phone || null,
+      active: true,
+      plan: "affiliate",
+      planStatus: "active",
+      accessExpiresAt: null,
+      smsConsent: !!phone,
+    },
+    update: {
+      active: true,
+      plan: "affiliate",
+      planStatus: "active",
+      accessExpiresAt: null,
+      smsConsent: !!phone,
+    },
+  });
+
+  // Send welcome email and SMS opt-in confirmation
+  await sendAffiliateWelcomeEmail({ name: creatorName, email }, upperCode);
+  if (phone) await sendSmsOptInConfirmation(phone);
 
   return NextResponse.json(affiliateCode, { status: 201 });
 }

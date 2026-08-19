@@ -14,6 +14,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data: { active },
   });
 
+  // Mirror active status to their subscriber account
+  if (updated.email) {
+    await db.subscriber.updateMany({
+      where: { email: updated.email },
+      data: { active, planStatus: active ? "active" : "expired" },
+    });
+  }
+
   return NextResponse.json(updated);
 }
 

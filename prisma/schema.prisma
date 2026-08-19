@@ -78,6 +78,8 @@ model AffiliateCode {
   id                Int            @id @default(autoincrement())
   code              String         @unique
   creatorName       String
+  email             String?
+  phone             String?
   stripeCouponId    String?
   stripePromoCodeId String?
   active            Boolean        @default(true)

@@ -255,3 +255,47 @@ export async function sendExpiryReminderEmail(
 </html>`,
   });
 }
+
+export async function sendAffiliateWelcomeEmail(
+  recipient: EmailRecipient,
+  code: string,
+): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const resend = new Resend(apiKey);
+  const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
+
+  const signupUrl = `${APP_URL}/signup?ref=${code}`;
+  const creatorKitUrl = `${APP_URL}/creators/${code}`;
+
+  await resend.emails.send({
+    from: FROM,
+    to: recipient.email,
+    subject: `🎸 Welcome to Guitar Stock Alert — your creator kit is ready`,
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+  <h2 style="margin:0 0 8px">🎸 Welcome, ${escapeHtml(recipient.name)}!</h2>
+  <p>Your creator account is live. You have free, permanent access to Guitar Stock Alert — you'll get real-time alerts whenever Guitars Garden drops new stock.</p>
+
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9f9f9;border-radius:8px">
+    <tr><td style="padding:10px 14px;font-weight:600">Your code</td><td style="padding:10px 14px;font-family:monospace;font-size:16px;font-weight:700">${escapeHtml(code)}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600">Access</td><td style="padding:10px 14px">Free · Permanent (while your code is active)</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600">Your signup link</td><td style="padding:10px 14px"><a href="${signupUrl}" style="color:#4f46e5">${signupUrl}</a></td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600">Bounty</td><td style="padding:10px 14px">$5 per annual · $2 per 30-day pass · paid biweekly</td></tr>
+  </table>
+
+  <p>Your creator kit has everything you need to start promoting — copy-paste scripts, captions, talking points, and FAQ answers all ready to go:</p>
+  <a href="${creatorKitUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;margin:8px 0">
+    View your creator kit →
+  </a>
+
+  <p style="margin-top:24px">Questions? Just reply to this email.</p>
+  <p style="margin-top:32px;font-size:12px;color:#999">
+    Guitar Stock Alert · <a href="${APP_URL}" style="color:#6366f1">guitarstockalert.com</a>
+  </p>
+</body>
+</html>`,
+  });
+}
