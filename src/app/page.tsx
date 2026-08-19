@@ -257,6 +257,7 @@ export default function DashboardPage() {
         <AffiliatesTab affiliates={affiliates} onRefresh={fetchAll} />
       ) : tab === "subscribers" ? (
         <div className="space-y-6">
+          <SubscriberTracker subscribers={subscribers} />
           <MessagingPanel
             testStatus={testEmailStatus}
             onTest={handleTestEmail}
@@ -532,6 +533,165 @@ const STATUS_STYLES: Record<string, { label: string; classes: string }> = {
   cancelled: { label: "Cancelled", classes: "bg-red-500/10 text-red-400 ring-red-500/30" },
   expired:   { label: "Expired",   classes: "bg-amber-500/10 text-amber-400 ring-amber-500/30" },
 };
+
+const PLAN_REVENUE: Record<string, number> = {
+  "30day": 5.99,
+  annual: 14.99 / 12,
+  monthly: 4.99, // legacy
+};
+
+function SubscriberTracker({ subscribers }: { subscribers: Subscriber[] }) {
+  const now = new Date();
+  const dayAgo   = new Date(now); dayAgo.setDate(dayAgo.getDate() - 1);
+  const weekAgo  = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+  const monthAgo = new Date(now); monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+  const paid = ["30day", "annual", "monthly"];
+  const realSubs = subscribers.filter((s) => s.plan !== "affiliate");
+  const active   = realSubs.filter((s) => s.active && s.planStatus === "active");
+
+  // Growth counts (exclude affiliates)
+  const newToday  = realSubs.filter((s) => new Date(s.createdAt) >= dayAgo).length;
+  const newWeek   = realSubs.filter((s) => new Date(s.createdAt) >= weekAgo).length;
+  const newMonth  = realSubs.filter((s) => new Date(s.createdAt) >= monthAgo).length;
+
+  // Plan breakdown
+  const trials   = active.filter((s) => s.plan === "trial").length;
+  const pass30   = active.filter((s) => s.plan === "30day").length;
+  const annual   = active.filter((s) => s.plan === "annual").length;
+  const legacyMo = active.filter((s) => s.plan === "monthly").length;
+
+  // Expiring in next 7 days
+  const week7 = new Date(now); week7.setDate(week7.getDate() + 7);
+  const expiringTrials = active.filter((s) =>
+    s.plan === "trial" && s.accessExpiresAt && new Date(s.accessExpiresAt) <= week7
+  ).length;
+
+  // Churn — inactive or expired paid subs (not affiliates, not trials that simply haven't converted)
+  const churned = realSubs.filter(
+    (s) => !s.active || s.planStatus === "cancelled" || s.planStatus === "expired"
+  ).length;
+
+  // Conversion rate — paid / (paid + expired trials)
+  const totalPaid = realSubs.filter((s) => s.plan && paid.includes(s.plan)).length;
+  const expiredTrials = realSubs.filter((s) => s.plan === "trial" && (s.planStatus === "expired" || !s.active)).length;
+  const conversionDenom = totalPaid + expiredTrials;
+  const conversionRate = conversionDenom > 0 ? Math.round((totalPaid / conversionDenom) * 100) : null;
+
+  // MRR
+  const mrr = active.reduce((sum, s) => sum + (PLAN_REVENUE[s.plan ?? ""] ?? 0), 0);
+
+  // Growth rate: avg new paid subs per month over last 3 months
+  const threeMonthsAgo = new Date(now); threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  const recentPaid = realSubs.filter(
+    (s) => s.plan && paid.includes(s.plan) && new Date(s.createdAt) >= threeMonthsAgo
+  ).length;
+  const avgNewPaidPerMonth = recentPaid / 3;
+  const avgRevenuePerSub = totalPaid > 0
+    ? active.filter((s) => s.plan && paid.includes(s.plan)).reduce((sum, s) => sum + (PLAN_REVENUE[s.plan ?? ""] ?? 0), 0) / Math.max(active.filter((s) => s.plan && paid.includes(s.plan)).length, 1)
+    : 5.99 / 2; // rough midpoint default
+
+  const proj3  = (mrr * 3) + (avgNewPaidPerMonth * avgRevenuePerSub * (1 + 2 + 3));
+  const proj6  = (mrr * 6) + (avgNewPaidPerMonth * avgRevenuePerSub * (1 + 2 + 3 + 4 + 5 + 6));
+
+  const fmt = (n: number) => `$${n.toFixed(2)}`;
+
+  return (
+    <div className="subscriber-tracker space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold">Subscriber Report</h2>
+        <button
+          onClick={() => window.print()}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 ring-1 transition hover:text-white print:hidden"
+          style={{ border: "1px solid var(--border)" }}
+        >
+          🖨 Print Report
+        </button>
+      </div>
+
+      {/* Growth */}
+      <Section title="New Subscribers">
+        <div className="grid grid-cols-3 gap-3">
+          <Metric label="Today"       value={newToday}  />
+          <Metric label="This Week"   value={newWeek}   />
+          <Metric label="This Month"  value={newMonth}  />
+        </div>
+      </Section>
+
+      {/* Plan breakdown */}
+      <Section title="Active Subscribers by Plan">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Metric label="Free Trial"   value={trials}   accent="text-amber-400" />
+          <Metric label="30-Day Pass"  value={pass30}   accent="text-blue-400" />
+          <Metric label="Annual"       value={annual}   accent="text-emerald-400" />
+          {legacyMo > 0 && <Metric label="Monthly (legacy)" value={legacyMo} accent="text-gray-400" />}
+        </div>
+      </Section>
+
+      {/* Signals */}
+      <Section title="Signals">
+        <div className="grid grid-cols-3 gap-3">
+          <Metric
+            label="Trials expiring (7 days)"
+            value={expiringTrials}
+            accent={expiringTrials > 0 ? "text-amber-400" : undefined}
+          />
+          <Metric
+            label="Conversion rate"
+            value={conversionRate !== null ? `${conversionRate}%` : "—"}
+            sub={conversionDenom < 5 ? "needs more data" : undefined}
+          />
+          <Metric
+            label="Churned / Inactive"
+            value={churned}
+            accent={churned > 0 ? "text-red-400" : undefined}
+          />
+        </div>
+      </Section>
+
+      {/* Revenue */}
+      <Section title="Revenue">
+        <div className="grid grid-cols-3 gap-3">
+          <Metric label="Current MRR"         value={fmt(mrr)}  accent="text-emerald-400" />
+          <Metric label="3-Month Projection"  value={fmt(proj3)} sub="cumulative" />
+          <Metric label="6-Month Projection"  value={fmt(proj6)} sub="cumulative" />
+        </div>
+        <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
+          Projections assume current MRR + average monthly new paid subscriber growth rate. Estimates only.
+        </p>
+      </Section>
+
+      <style>{`
+        @media print {
+          body > * { display: none !important; }
+          .subscriber-tracker { display: block !important; color: #000; background: #fff; padding: 32px; }
+          .subscriber-tracker * { color: #000 !important; background: transparent !important; border-color: #ccc !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
+      <div className="px-4 py-2.5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{title}</span>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+function Metric({ label, value, accent, sub }: { label: string; value: string | number; accent?: string; sub?: string }) {
+  return (
+    <div className="rounded-lg p-3" style={{ backgroundColor: "var(--surface)" }}>
+      <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{label}</p>
+      <p className={`text-2xl font-bold tabular-nums ${accent ?? "text-white"}`}>{value}</p>
+      {sub && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{sub}</p>}
+    </div>
+  );
+}
 
 function SubscriberTable({
   subscribers,
