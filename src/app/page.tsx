@@ -540,7 +540,10 @@ const PLAN_REVENUE: Record<string, number> = {
   monthly: 4.99, // legacy
 };
 
+type TrackerTab = "growth" | "plans" | "signals" | "revenue";
+
 function SubscriberTracker({ subscribers }: { subscribers: Subscriber[] }) {
+  const [trackerTab, setTrackerTab] = useState<TrackerTab>("growth");
   const now = new Date();
   const dayAgo   = new Date(now); dayAgo.setDate(dayAgo.getDate() - 1);
   const weekAgo  = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
@@ -596,70 +599,96 @@ function SubscriberTracker({ subscribers }: { subscribers: Subscriber[] }) {
 
   const fmt = (n: number) => `$${n.toFixed(2)}`;
 
+  const TRACKER_TABS: { value: TrackerTab; label: string }[] = [
+    { value: "growth",  label: "Growth" },
+    { value: "plans",   label: "By Plan" },
+    { value: "signals", label: "Signals" },
+    { value: "revenue", label: "Revenue" },
+  ];
+
   return (
-    <div className="subscriber-tracker space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">Subscriber Report</h2>
+    <div className="subscriber-tracker overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Subscriber Report</span>
         <button
           onClick={() => window.print()}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-400 ring-1 transition hover:text-white print:hidden"
           style={{ border: "1px solid var(--border)" }}
         >
-          🖨 Print Report
+          🖨 Print
         </button>
       </div>
 
-      {/* Growth */}
-      <Section title="New Subscribers">
-        <div className="grid grid-cols-3 gap-3">
-          <Metric label="Today"       value={newToday}  />
-          <Metric label="This Week"   value={newWeek}   />
-          <Metric label="This Month"  value={newMonth}  />
-        </div>
-      </Section>
+      {/* Tabs */}
+      <div className="flex border-b" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+        {TRACKER_TABS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setTrackerTab(t.value)}
+            className={`px-5 py-2.5 text-xs font-medium transition border-b-2 -mb-px ${
+              trackerTab === t.value
+                ? "border-indigo-500 text-white"
+                : "border-transparent text-gray-400 hover:text-white"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Plan breakdown */}
-      <Section title="Active Subscribers by Plan">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Metric label="Free Trial"   value={trials}   accent="text-amber-400" />
-          <Metric label="30-Day Pass"  value={pass30}   accent="text-blue-400" />
-          <Metric label="Annual"       value={annual}   accent="text-emerald-400" />
-          {legacyMo > 0 && <Metric label="Monthly (legacy)" value={legacyMo} accent="text-gray-400" />}
-        </div>
-      </Section>
+      {/* Tab content */}
+      <div className="p-4">
+        {trackerTab === "growth" && (
+          <div className="grid grid-cols-3 gap-3">
+            <Metric label="Today"      value={newToday} />
+            <Metric label="This Week"  value={newWeek} />
+            <Metric label="This Month" value={newMonth} />
+          </div>
+        )}
 
-      {/* Signals */}
-      <Section title="Signals">
-        <div className="grid grid-cols-3 gap-3">
-          <Metric
-            label="Trials expiring (7 days)"
-            value={expiringTrials}
-            accent={expiringTrials > 0 ? "text-amber-400" : undefined}
-          />
-          <Metric
-            label="Conversion rate"
-            value={conversionRate !== null ? `${conversionRate}%` : "—"}
-            sub={conversionDenom < 5 ? "needs more data" : undefined}
-          />
-          <Metric
-            label="Churned / Inactive"
-            value={churned}
-            accent={churned > 0 ? "text-red-400" : undefined}
-          />
-        </div>
-      </Section>
+        {trackerTab === "plans" && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Metric label="Free Trial"  value={trials}   accent="text-amber-400" />
+            <Metric label="30-Day Pass" value={pass30}   accent="text-blue-400" />
+            <Metric label="Annual"      value={annual}   accent="text-emerald-400" />
+            {legacyMo > 0 && <Metric label="Monthly (legacy)" value={legacyMo} accent="text-gray-400" />}
+          </div>
+        )}
 
-      {/* Revenue */}
-      <Section title="Revenue">
-        <div className="grid grid-cols-3 gap-3">
-          <Metric label="Current MRR"         value={fmt(mrr)}  accent="text-emerald-400" />
-          <Metric label="3-Month Projection"  value={fmt(proj3)} sub="cumulative" />
-          <Metric label="6-Month Projection"  value={fmt(proj6)} sub="cumulative" />
-        </div>
-        <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
-          Projections assume current MRR + average monthly new paid subscriber growth rate. Estimates only.
-        </p>
-      </Section>
+        {trackerTab === "signals" && (
+          <div className="grid grid-cols-3 gap-3">
+            <Metric
+              label="Trials expiring (7 days)"
+              value={expiringTrials}
+              accent={expiringTrials > 0 ? "text-amber-400" : undefined}
+            />
+            <Metric
+              label="Conversion rate"
+              value={conversionRate !== null ? `${conversionRate}%` : "—"}
+              sub={conversionDenom < 5 ? "needs more data" : undefined}
+            />
+            <Metric
+              label="Churned / Inactive"
+              value={churned}
+              accent={churned > 0 ? "text-red-400" : undefined}
+            />
+          </div>
+        )}
+
+        {trackerTab === "revenue" && (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              <Metric label="Current MRR"        value={fmt(mrr)}   accent="text-emerald-400" />
+              <Metric label="3-Month Projection" value={fmt(proj3)} sub="cumulative" />
+              <Metric label="6-Month Projection" value={fmt(proj6)} sub="cumulative" />
+            </div>
+            <p className="mt-3 text-xs" style={{ color: "var(--text-muted)" }}>
+              Projections assume current MRR + average monthly new paid subscriber growth rate. Estimates only.
+            </p>
+          </>
+        )}
+      </div>
 
       <style>{`
         @media print {
