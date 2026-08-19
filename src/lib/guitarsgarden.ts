@@ -199,8 +199,16 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
     }
   }
 
+  // Deduplicate alertProducts by URL — if same product appears as both NEW and RESTOCK, keep NEW
+  const alertMap = new Map<string, ProductAlert>();
+  for (const p of alertProducts) {
+    const existing = alertMap.get(p.url);
+    if (!existing || p.isNew) alertMap.set(p.url, p);
+  }
+  const deduped = Array.from(alertMap.values());
+
   // Send one combined alert for all new + restocked products
-  if (alertProducts.length > 0) {
+  if (deduped.length > 0) {
     const now = new Date();
     const subscribers = await db.subscriber.findMany({
       where: {
@@ -219,8 +227,8 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
         .filter((s) => s.smsConsent && s.phone)
         .map((s) => ({ name: s.name, phone: s.phone! }));
 
-      await sendStockAlertEmail(subscribers, alertProducts);
-      if (smsRecipients.length > 0) await sendStockAlertSms(smsRecipients, alertProducts);
+      await sendStockAlertEmail(subscribers, deduped);
+      if (smsRecipients.length > 0) await sendStockAlertSms(smsRecipients, deduped);
     }
   }
 
