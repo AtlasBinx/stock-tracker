@@ -283,7 +283,7 @@ export async function sendAffiliateWelcomeEmail(
     <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Your code</td><td style="padding:10px 14px;font-family:monospace;font-size:16px;font-weight:700">${escapeHtml(code)}</td></tr>
     <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Your link</td><td style="padding:10px 14px"><a href="${signupUrl}" style="color:#4f46e5;word-break:break-all">${signupUrl}</a></td></tr>
     <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Access</td><td style="padding:10px 14px">Free · Permanent while your code is active</td></tr>
-    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Bounty</td><td style="padding:10px 14px">$5 per annual · $2 per 30-day pass</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Bounty</td><td style="padding:10px 14px">33% of each sale</td></tr>
     <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Payouts</td><td style="padding:10px 14px">Biweekly · no minimum · your preferred method</td></tr>
   </table>
 
