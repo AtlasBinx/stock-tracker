@@ -1024,6 +1024,26 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
   const [creating, setCreating] = useState(false);
   const [msg, setMsg] = useState("");
   const [period, setPeriod] = useState<"weekly" | "monthly" | "ytd" | "allTime">("monthly");
+  const [reportStatus, setReportStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function handleSendReports() {
+    if (!confirm("Send biweekly reports to all active affiliates with an email on file?")) return;
+    setReportStatus("sending");
+    try {
+      const res = await fetch("/api/admin/affiliates/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ periodLabel: "Last 14 Days", periodDays: 14 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setReportStatus("sent");
+      setTimeout(() => setReportStatus("idle"), 5000);
+    } catch {
+      setReportStatus("error");
+      setTimeout(() => setReportStatus("idle"), 5000);
+    }
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -1078,6 +1098,19 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-semibold">Creator Breakdown</h2>
+          <div className="flex items-center gap-2">
+            {reportStatus !== "idle" && (
+              <span className={`text-xs ${reportStatus === "sent" ? "text-emerald-400" : reportStatus === "error" ? "text-red-400" : "text-gray-400"}`}>
+                {reportStatus === "sending" ? "Sending…" : reportStatus === "sent" ? "Reports sent!" : "Error sending"}
+              </span>
+            )}
+            <button
+              onClick={handleSendReports}
+              disabled={reportStatus === "sending"}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-indigo-400 ring-1 ring-inset ring-indigo-500/40 hover:bg-indigo-500/10 transition disabled:opacity-50"
+            >
+              Send Biweekly Reports
+            </button>
           <div className="flex gap-1">
             {(["weekly", "monthly", "ytd", "allTime"] as const).map((p) => (
               <button
@@ -1090,6 +1123,7 @@ function AffiliatesTab({ affiliates, onRefresh }: { affiliates: AffiliateReport[
                 {periodLabel[p]}
               </button>
             ))}
+          </div>
           </div>
         </div>
 

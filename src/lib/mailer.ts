@@ -256,6 +256,71 @@ export async function sendExpiryReminderEmail(
   });
 }
 
+export interface AffiliateReportData {
+  creatorName: string;
+  email: string;
+  code: string;
+  periodLabel: string;
+  periodTrials: number;
+  periodConversions: number;
+  periodBounty: number;
+  allTimeConversions: number;
+  allTimeBounty: number;
+  activeTrials: number;
+}
+
+export async function sendAffiliateReportEmail(data: AffiliateReportData): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const resend = new Resend(apiKey);
+  const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
+
+  const signupUrl = `${APP_URL}/signup?ref=${data.code}`;
+  const creatorKitUrl = `${APP_URL}/creators/${data.code}`;
+
+  await resend.emails.send({
+    from: FROM,
+    to: data.email,
+    subject: `Your Guitar Stock Alert report — ${data.periodLabel}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+  <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">Guitar Stock Alert</p>
+  <h2 style="margin:0 0 6px;font-size:22px;font-weight:700">&#127928; Hey ${escapeHtml(data.creatorName)}, here's your report</h2>
+  <p style="margin:0 0 24px;color:#555;font-size:14px">Here's how your referral link is performing for the period: <strong>${escapeHtml(data.periodLabel)}</strong></p>
+
+  <h3 style="margin:0 0 8px;font-size:14px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">This Period</h3>
+  <table style="width:100%;border-collapse:collapse;margin:0 0 24px;background:#f9f9f9;border-radius:8px;overflow:hidden">
+    <tr><td style="padding:10px 14px;font-weight:600;border-bottom:1px solid #efefef">New free trials</td><td style="padding:10px 14px;border-bottom:1px solid #efefef">${data.periodTrials}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;border-bottom:1px solid #efefef">Conversions to paid</td><td style="padding:10px 14px;border-bottom:1px solid #efefef">${data.periodConversions}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600">Bounty earned</td><td style="padding:10px 14px;font-weight:700;color:#059669">$${data.periodBounty.toFixed(2)}</td></tr>
+  </table>
+
+  <h3 style="margin:0 0 8px;font-size:14px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">All Time</h3>
+  <table style="width:100%;border-collapse:collapse;margin:0 0 24px;background:#f9f9f9;border-radius:8px;overflow:hidden">
+    <tr><td style="padding:10px 14px;font-weight:600;border-bottom:1px solid #efefef">Active free trials</td><td style="padding:10px 14px;border-bottom:1px solid #efefef">${data.activeTrials}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;border-bottom:1px solid #efefef">Total paid subscribers</td><td style="padding:10px 14px;border-bottom:1px solid #efefef">${data.allTimeConversions}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600">Total bounty earned</td><td style="padding:10px 14px;font-weight:700;color:#059669">$${data.allTimeBounty.toFixed(2)}</td></tr>
+  </table>
+
+  <p style="margin:0 0 16px;font-size:14px;color:#333">Keep sharing your link to keep the momentum going:</p>
+  <p style="margin:0 0 20px;font-size:14px"><a href="${signupUrl}" style="color:#4f46e5;word-break:break-all">${signupUrl}</a></p>
+
+  <a href="${creatorKitUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;margin-bottom:28px">
+    View creator kit
+  </a>
+
+  <p style="margin:0;font-size:13px;color:#555">Questions about your payout? Just reply to this email.</p>
+  <p style="margin-top:32px;font-size:12px;color:#999">
+    Guitar Stock Alert &middot; <a href="${APP_URL}" style="color:#6366f1">guitarstockalert.com</a>
+  </p>
+</body>
+</html>`,
+  });
+}
+
 export async function sendAffiliateWelcomeEmail(
   recipient: EmailRecipient,
   code: string,
