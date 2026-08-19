@@ -275,16 +275,17 @@ export async function sendAffiliateWelcomeEmail(
     html: `
 <!DOCTYPE html>
 <html>
+<head><meta charset="utf-8"></head>
 <body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
-  <h2 style="margin:0 0 8px">🎸 Welcome, ${escapeHtml(recipient.name)}!</h2>
+  <h2 style="margin:0 0 8px">&#127928; Welcome, ${escapeHtml(recipient.name)}!</h2>
   <p>We've set you up with everything you need to start earning. Your creator account is live — you have <strong>free, permanent access</strong> to Guitar Stock Alert and will receive real-time alerts whenever Guitars Garden drops new stock, just like your audience will.</p>
 
   <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9f9f9;border-radius:8px">
     <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Your code</td><td style="padding:10px 14px;font-family:monospace;font-size:16px;font-weight:700">${escapeHtml(code)}</td></tr>
     <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Your link</td><td style="padding:10px 14px"><a href="${signupUrl}" style="color:#4f46e5;word-break:break-all">${signupUrl}</a></td></tr>
-    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Access</td><td style="padding:10px 14px">Free · Permanent while your code is active</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Access</td><td style="padding:10px 14px">Free &mdash; Permanent while your code is active</td></tr>
     <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Bounty</td><td style="padding:10px 14px">33% of each sale</td></tr>
-    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Payouts</td><td style="padding:10px 14px">Biweekly · no minimum · your preferred method</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Payouts</td><td style="padding:10px 14px">Biweekly, no minimum, your preferred method</td></tr>
   </table>
 
   <h3 style="margin:24px 0 8px;font-size:16px">How it works</h3>
@@ -303,7 +304,7 @@ export async function sendAffiliateWelcomeEmail(
     <li>Talking points and FAQ answers for any questions your audience might have</li>
   </ul>
   <a href="${creatorKitUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:15px;margin:4px 0">
-    Open your creator kit →
+    Open your creator kit
   </a>
 
   <p style="margin-top:28px;color:#555">Questions? Just reply to this email — we're happy to help.</p>
