@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/auth";
 import { sendAffiliateWelcomeEmail } from "@/lib/mailer";
-import { sendSmsOptInConfirmation } from "@/lib/sms";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +81,6 @@ export async function POST(req: NextRequest) {
 
   // Send welcome email and SMS opt-in confirmation
   await sendAffiliateWelcomeEmail({ name: creatorName, email }, upperCode);
-  if (phone) await sendSmsOptInConfirmation(phone);
 
   return NextResponse.json(affiliateCode, { status: 201 });
 }
