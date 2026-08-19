@@ -277,21 +277,36 @@ export async function sendAffiliateWelcomeEmail(
 <html>
 <body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
   <h2 style="margin:0 0 8px">🎸 Welcome, ${escapeHtml(recipient.name)}!</h2>
-  <p>Your creator account is live. You have free, permanent access to Guitar Stock Alert — you'll get real-time alerts whenever Guitars Garden drops new stock.</p>
+  <p>We've set you up with everything you need to start earning. Your creator account is live — you have <strong>free, permanent access</strong> to Guitar Stock Alert and will receive real-time alerts whenever Guitars Garden drops new stock, just like your audience will.</p>
 
   <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9f9f9;border-radius:8px">
-    <tr><td style="padding:10px 14px;font-weight:600">Your code</td><td style="padding:10px 14px;font-family:monospace;font-size:16px;font-weight:700">${escapeHtml(code)}</td></tr>
-    <tr><td style="padding:10px 14px;font-weight:600">Access</td><td style="padding:10px 14px">Free · Permanent (while your code is active)</td></tr>
-    <tr><td style="padding:10px 14px;font-weight:600">Your signup link</td><td style="padding:10px 14px"><a href="${signupUrl}" style="color:#4f46e5">${signupUrl}</a></td></tr>
-    <tr><td style="padding:10px 14px;font-weight:600">Bounty</td><td style="padding:10px 14px">$5 per annual · $2 per 30-day pass · paid biweekly</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Your code</td><td style="padding:10px 14px;font-family:monospace;font-size:16px;font-weight:700">${escapeHtml(code)}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Your link</td><td style="padding:10px 14px"><a href="${signupUrl}" style="color:#4f46e5;word-break:break-all">${signupUrl}</a></td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Access</td><td style="padding:10px 14px">Free · Permanent while your code is active</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Bounty</td><td style="padding:10px 14px">$5 per annual · $2 per 30-day pass</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;white-space:nowrap">Payouts</td><td style="padding:10px 14px">Biweekly · no minimum · your preferred method</td></tr>
   </table>
 
-  <p>Your creator kit has everything you need to start promoting — copy-paste scripts, captions, talking points, and FAQ answers all ready to go:</p>
-  <a href="${creatorKitUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;margin:8px 0">
-    View your creator kit →
+  <h3 style="margin:24px 0 8px;font-size:16px">How it works</h3>
+  <ol style="margin:0;padding-left:20px;line-height:1.8;color:#333">
+    <li>Share your link — your audience signs up and gets <strong>30 free days</strong>, no credit card required</li>
+    <li>At the end of their trial, if they choose a plan, you earn your bounty — <strong>30-day attribution window</strong></li>
+    <li>You'll start receiving stock alerts yourself right away</li>
+  </ol>
+
+  <h3 style="margin:24px 0 8px;font-size:16px">Your creator kit</h3>
+  <p style="margin:0 0 12px">Your kit has everything ready to go — no need to write anything from scratch:</p>
+  <ul style="margin:0 0 16px;padding-left:20px;line-height:1.8;color:#333">
+    <li>Copy-paste video scripts (30s and 60s cuts)</li>
+    <li>YouTube description blurb, end screen script, and community post</li>
+    <li>Instagram caption and email template</li>
+    <li>Talking points and FAQ answers for any questions your audience might have</li>
+  </ul>
+  <a href="${creatorKitUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:15px;margin:4px 0">
+    Open your creator kit →
   </a>
 
-  <p style="margin-top:24px">Questions? Just reply to this email.</p>
+  <p style="margin-top:28px;color:#555">Questions? Just reply to this email — we're happy to help.</p>
   <p style="margin-top:32px;font-size:12px;color:#999">
     Guitar Stock Alert · <a href="${APP_URL}" style="color:#6366f1">guitarstockalert.com</a>
   </p>
