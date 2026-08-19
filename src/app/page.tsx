@@ -693,6 +693,16 @@ function Metric({ label, value, accent, sub }: { label: string; value: string | 
   );
 }
 
+type SubFilter = "all" | "trial" | "30day" | "annual" | "affiliate";
+
+const SUB_FILTERS: { value: SubFilter; label: string }[] = [
+  { value: "all",       label: "All" },
+  { value: "trial",     label: "Free Trial" },
+  { value: "30day",     label: "30-Day Pass" },
+  { value: "annual",    label: "Annual" },
+  { value: "affiliate", label: "Affiliate" },
+];
+
 function SubscriberTable({
   subscribers,
   onRemove,
@@ -700,7 +710,9 @@ function SubscriberTable({
   subscribers: Subscriber[];
   onRemove: (id: number) => void;
 }) {
+  const [planFilter, setPlanFilter] = useState<SubFilter>("all");
   const active = subscribers.filter((s) => s.active);
+  const filtered = planFilter === "all" ? active : active.filter((s) => s.plan === planFilter);
 
   if (active.length === 0) {
     return (
@@ -716,6 +728,29 @@ function SubscriberTable({
   }
 
   return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {SUB_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setPlanFilter(f.value)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              planFilter === f.value
+                ? "bg-indigo-600 text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+            style={planFilter !== f.value ? { border: "1px solid var(--border)" } : undefined}
+          >
+            {f.label}
+            {f.value !== "all" && (
+              <span className="ml-1.5 opacity-60">
+                {active.filter((s) => s.plan === f.value).length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
     <div className="overflow-x-auto overflow-hidden rounded-2xl" style={{ border: "1px solid var(--border)" }}>
       <table className="w-full text-sm">
         <thead>
@@ -728,14 +763,20 @@ function SubscriberTable({
           </tr>
         </thead>
         <tbody>
-          {active.map((s, i) => {
+          {filtered.length === 0 ? (
+            <tr>
+              <td colSpan={8} className="px-4 py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+                No subscribers in this category
+              </td>
+            </tr>
+          ) : filtered.map((s, i) => {
             const statusStyle = STATUS_STYLES[s.planStatus ?? ""] ?? { label: s.planStatus ?? "—", classes: "bg-gray-500/10 text-gray-400 ring-gray-500/30" };
             return (
               <tr
                 key={s.id}
                 style={{
                   backgroundColor: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)",
-                  borderBottom: i < active.length - 1 ? "1px solid var(--border)" : undefined,
+                  borderBottom: i < filtered.length - 1 ? "1px solid var(--border)" : undefined,
                 }}
               >
                 <td className="px-4 py-3 font-medium whitespace-nowrap">{s.name}</td>
@@ -774,6 +815,7 @@ function SubscriberTable({
           })}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }
