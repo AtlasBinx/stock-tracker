@@ -81,15 +81,33 @@ export async function sendStockAlertSms(
     ? "New guitars at Guitars Garden:"
     : "Back in stock at Guitars Garden:";
 
-  // List up to 3 products with direct links
-  const lines = products.slice(0, 3).map((p) =>
-    `${p.isNew ? "NEW" : "RESTOCK"}: ${p.title}\n${p.url}`
+  // Build product lines then chunk into messages that stay under 1500 chars
+  const productLines = products.map((p) => `${p.isNew ? "NEW" : "RESTOCK"}: ${p.title}\n${p.url}`);
+  const footer = "\n\nReply STOP to opt out.";
+  const prefix = `Guitar Stock Alert: ${intro}\n\n`;
+
+  const chunks: string[][] = [];
+  let current: string[] = [];
+  for (const line of productLines) {
+    const candidate = [...current, line];
+    const body = prefix + candidate.join("\n\n") + footer;
+    if (body.length > 1500 && current.length > 0) {
+      chunks.push(current);
+      current = [line];
+    } else {
+      current = candidate;
+    }
+  }
+  if (current.length > 0) chunks.push(current);
+
+  const messages = chunks.map((chunk, i) => {
+    const part = chunks.length > 1 ? ` (${i + 1}/${chunks.length})` : "";
+    return `Guitar Stock Alert${part}: ${intro}\n\n${chunk.join("\n\n")}${footer}`;
+  });
+
+  await Promise.allSettled(
+    recipients.flatMap((r) => messages.map((body) => sendSms(r.phone, body)))
   );
-  const more = products.length > 3 ? `\n+${products.length - 3} more at https://guitarsgarden.com` : "";
-
-  const body = `Guitar Stock Alert: ${intro}\n\n${lines.join("\n\n")}${more}\n\nReply STOP to opt out.`;
-
-  await Promise.allSettled(recipients.map((r) => sendSms(r.phone, body)));
 }
 
 // Keep old names as aliases so existing imports don't break
