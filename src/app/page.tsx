@@ -268,47 +268,7 @@ export default function DashboardPage() {
       ) : (
       <>
       {/* ── Recent Changes (event feed) ── */}
-      {(() => {
-        const relevant = events.filter(e => e.type === "ADDED" || e.type === "WENT_IN_STOCK").slice(0, 30);
-        const cfg: Record<string, { label: string; color: string; dot: string }> = {
-          ADDED:         { label: "New",     color: "text-emerald-400", dot: "bg-emerald-400" },
-          WENT_IN_STOCK: { label: "Restock", color: "text-blue-400",   dot: "bg-blue-400" },
-        };
-        return (
-          <div className="mb-6 overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between px-4 py-2.5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Recent Changes</span>
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>Last 30 adds &amp; restocks</span>
-            </div>
-            {relevant.length === 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>No changes detected yet</p>
-              </div>
-            ) : (
-              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
-                {relevant.map((e) => {
-                  const c = cfg[e.type];
-                  const url = `https://guitarsgarden.com/products/${e.product.handle}`;
-                  return (
-                    <div key={e.id} className="flex items-center gap-3 px-4 py-2.5">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset shrink-0 ${c.color}`} style={{ background: "var(--surface-2)" }}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
-                        {c.label}
-                      </span>
-                      <a href={url} target="_blank" rel="noreferrer" className="flex-1 truncate text-sm font-medium hover:text-indigo-400 transition">
-                        {e.product.title}
-                      </a>
-                      <span className="tabular-nums text-xs shrink-0" style={{ color: "var(--text-muted)" }}>
-                        {new Date(e.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      <RecentChangesFeed events={events} />
 
       {/* ── Two-column layout ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -535,6 +495,71 @@ const STATUS_STYLES: Record<string, { label: string; classes: string }> = {
   cancelled: { label: "Cancelled", classes: "bg-red-500/10 text-red-400 ring-red-500/30" },
   expired:   { label: "Expired",   classes: "bg-amber-500/10 text-amber-400 ring-amber-500/30" },
 };
+
+const EVENT_CFG: Record<string, { label: string; color: string; dot: string }> = {
+  ADDED:         { label: "New",     color: "text-emerald-400", dot: "bg-emerald-400" },
+  WENT_IN_STOCK: { label: "Restock", color: "text-blue-400",   dot: "bg-blue-400" },
+};
+
+type EventFilter = "all" | "ADDED" | "WENT_IN_STOCK";
+
+function RecentChangesFeed({ events }: { events: GuitarEvent[] }) {
+  const [filter, setFilter] = useState<EventFilter>("all");
+  const relevant = events.filter(e => e.type === "ADDED" || e.type === "WENT_IN_STOCK");
+  const filtered = filter === "all" ? relevant : relevant.filter(e => e.type === filter);
+  const displayed = filtered.slice(0, 30);
+
+  const filterBtns: { value: EventFilter; label: string }[] = [
+    { value: "all",           label: `All (${relevant.length})` },
+    { value: "ADDED",         label: `New (${relevant.filter(e => e.type === "ADDED").length})` },
+    { value: "WENT_IN_STOCK", label: `Restocks (${relevant.filter(e => e.type === "WENT_IN_STOCK").length})` },
+  ];
+
+  return (
+    <div className="mb-6 overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
+      <div className="flex items-center justify-between px-4 py-2.5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Recent Changes</span>
+        <div className="flex gap-1">
+          {filterBtns.map(f => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${filter === f.value ? "bg-indigo-600 text-white" : "text-gray-400 hover:text-white"}`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {displayed.length === 0 ? (
+        <div className="flex items-center justify-center py-8">
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>No changes detected yet</p>
+        </div>
+      ) : (
+        <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+          {displayed.map((e) => {
+            const c = EVENT_CFG[e.type];
+            const url = `https://guitarsgarden.com/products/${e.product.handle}`;
+            return (
+              <div key={e.id} className="flex items-center gap-3 px-4 py-2.5">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset shrink-0 ${c.color}`} style={{ background: "var(--surface-2)" }}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+                  {c.label}
+                </span>
+                <a href={url} target="_blank" rel="noreferrer" className="flex-1 truncate text-sm font-medium hover:text-indigo-400 transition">
+                  {e.product.title}
+                </a>
+                <span className="tabular-nums text-xs shrink-0" style={{ color: "var(--text-muted)" }}>
+                  {new Date(e.createdAt).toLocaleString()}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const PLAN_REVENUE: Record<string, number> = {
   "30day": 5.99,
