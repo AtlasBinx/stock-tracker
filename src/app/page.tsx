@@ -267,41 +267,43 @@ export default function DashboardPage() {
         </div>
       ) : (
       <>
-      {/* ── Sync history (changes only) ── */}
+      {/* ── Recent Changes (event feed) ── */}
       {(() => {
-        const changedSyncs = syncs.filter(s => s.added + s.removed + s.wentInStock + s.wentOutOfStock > 0).slice(0, 10);
+        const relevant = events.filter(e => e.type === "ADDED" || e.type === "WENT_IN_STOCK").slice(0, 30);
+        const cfg: Record<string, { label: string; color: string; dot: string }> = {
+          ADDED:         { label: "New",     color: "text-emerald-400", dot: "bg-emerald-400" },
+          WENT_IN_STOCK: { label: "Restock", color: "text-blue-400",   dot: "bg-blue-400" },
+        };
         return (
           <div className="mb-6 overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-4 py-2.5" style={{ backgroundColor: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}>
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Recent Changes</span>
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>Last 10 syncs with changes</span>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>Last 30 adds &amp; restocks</span>
             </div>
-            {changedSyncs.length === 0 ? (
+            {relevant.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>No changes detected yet</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ backgroundColor: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
-                      {["Time", "Added", "Removed", "→ In Stock", "→ Out of Stock"].map((h) => (
-                        <th key={h} className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {changedSyncs.map((s, i) => (
-                      <tr key={s.id} style={{ borderBottom: i < changedSyncs.length - 1 ? "1px solid var(--border)" : undefined }}>
-                        <td className="px-4 py-2 tabular-nums text-xs" style={{ color: "var(--text-muted)" }}>{new Date(s.checkedAt).toLocaleString()}</td>
-                        <td className="px-4 py-2 tabular-nums text-emerald-400">{s.added > 0 ? `+${s.added}` : "—"}</td>
-                        <td className="px-4 py-2 tabular-nums text-red-400">{s.removed > 0 ? `-${s.removed}` : "—"}</td>
-                        <td className="px-4 py-2 tabular-nums text-blue-400">{s.wentInStock > 0 ? s.wentInStock : "—"}</td>
-                        <td className="px-4 py-2 tabular-nums text-amber-400">{s.wentOutOfStock > 0 ? s.wentOutOfStock : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+                {relevant.map((e) => {
+                  const c = cfg[e.type];
+                  const url = `https://guitarsgarden.com/products/${e.product.handle}`;
+                  return (
+                    <div key={e.id} className="flex items-center gap-3 px-4 py-2.5">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset shrink-0 ${c.color}`} style={{ background: "var(--surface-2)" }}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
+                        {c.label}
+                      </span>
+                      <a href={url} target="_blank" rel="noreferrer" className="flex-1 truncate text-sm font-medium hover:text-indigo-400 transition">
+                        {e.product.title}
+                      </a>
+                      <span className="tabular-nums text-xs shrink-0" style={{ color: "var(--text-muted)" }}>
+                        {new Date(e.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
