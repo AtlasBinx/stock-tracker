@@ -176,7 +176,7 @@ export default function DashboardPage() {
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">Guitars Garden</h1>
+            <h1 className="text-2xl font-bold tracking-tight">🎸 Guitars Garden</h1>
             <a
               href="https://guitarsgarden.com"
               target="_blank"

@@ -27,10 +27,10 @@ export async function sendStockAlertEmail(
   const hasNew = products.some((p) => p.isNew);
   const hasRestock = products.some((p) => !p.isNew);
   const subject = hasNew && hasRestock
-    ? "New & restocked guitars at Guitars Garden"
+    ? "🎸 New & restocked guitars at Guitars Garden"
     : hasNew
-    ? "New guitars just dropped at Guitars Garden"
-    : "Guitars back in stock at Guitars Garden";
+    ? "🎸 New guitars just dropped at Guitars Garden"
+    : "🎸 Guitars back in stock at Guitars Garden";
 
   const productRowsHtml = products.map((p) => `
     <a href="${escapeHtml(p.url)}" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;padding:10px 0;border-bottom:1px solid #f0f0f0;">
@@ -70,7 +70,7 @@ export async function sendStockAlertEmail(
 <!DOCTYPE html>
 <html>
 <body style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1a1a1a;background:#fff">
-  <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">Guitar Stock Alert</p>
+  <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">&#127928; Guitar Stock Alert</p>
   <h2 style="margin:0 0 6px;font-size:22px;font-weight:700">${escapeHtml(subject)}</h2>
   <p style="margin:0 0 16px;color:#555;font-size:14px">Hi ${escapeHtml(r.name)}, here's what just changed at Guitars Garden:</p>
   <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;padding:0 16px;margin-bottom:20px;">
