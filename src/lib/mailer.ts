@@ -32,14 +32,17 @@ export async function sendStockAlertEmail(
     ? "New guitars just dropped at Guitars Garden"
     : "Guitars back in stock at Guitars Garden";
 
-  const productCardsHtml = products.map((p) => `
-    <a href="${escapeHtml(p.url)}" style="display:block;text-decoration:none;color:inherit;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:12px">
-      ${p.imageUrl ? `<img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.title)}" style="width:100%;max-height:220px;object-fit:cover;display:block">` : ""}
-      <div style="padding:12px 16px">
-        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${p.isNew ? "#059669" : "#2563eb"}">${p.isNew ? "NEW" : "BACK IN STOCK"}</p>
-        <p style="margin:0;font-size:14px;font-weight:600;color:#111">${escapeHtml(p.title)}</p>
-        <p style="margin:6px 0 0;font-size:13px;color:#4f46e5;font-weight:500">View product →</p>
+  const productRowsHtml = products.map((p) => `
+    <a href="${escapeHtml(p.url)}" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;padding:10px 0;border-bottom:1px solid #f0f0f0;">
+      ${p.imageUrl
+        ? `<img src="${escapeHtml(p.imageUrl)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;">`
+        : `<div style="width:44px;height:44px;border-radius:6px;background:#f3f4f6;flex-shrink:0;"></div>`
+      }
+      <div style="flex:1;min-width:0;">
+        <p style="margin:0 0 2px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:${p.isNew ? "#059669" : "#2563eb"}">${p.isNew ? "New" : "Back in Stock"}</p>
+        <p style="margin:0;font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.title)}</p>
       </div>
+      <span style="font-size:12px;color:#4f46e5;font-weight:600;flex-shrink:0;">View &rsaquo;</span>
     </a>`).join("");
 
   const productTextList = products.map((p) =>
@@ -69,8 +72,10 @@ export async function sendStockAlertEmail(
 <body style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1a1a1a;background:#fff">
   <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">Guitar Stock Alert</p>
   <h2 style="margin:0 0 6px;font-size:22px;font-weight:700">${escapeHtml(subject)}</h2>
-  <p style="margin:0 0 24px;color:#555;font-size:14px">Hi ${escapeHtml(r.name)}, here's what just changed at Guitars Garden:</p>
-  ${productCardsHtml}
+  <p style="margin:0 0 16px;color:#555;font-size:14px">Hi ${escapeHtml(r.name)}, here's what just changed at Guitars Garden:</p>
+  <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;padding:0 16px;margin-bottom:20px;">
+    ${productRowsHtml}
+  </div>
   <a href="${STORE_URL}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:8px;font-size:14px">
     View full store →
   </a>
