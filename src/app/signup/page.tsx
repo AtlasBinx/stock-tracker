@@ -87,7 +87,7 @@ export default function SignupPage() {
           <div className="text-5xl mb-4">🎸</div>
           <h1 className="text-2xl font-bold mb-2">You&apos;re in!</h1>
           <p className="mb-4" style={{ color: "var(--text-muted)" }}>
-            Check your email — your trial is active for 30 days. We&apos;ll text you the second something drops at Guitars Garden.
+            Check your email — you&apos;re signed up. We&apos;ll text and email you the next time something drops at Guitars Garden.
           </p>
           <a
             href="/account"
@@ -115,7 +115,7 @@ export default function SignupPage() {
         </p>
         {hasTrial ? (
           <p className="text-sm text-emerald-400 font-medium">
-            🎁 Referral code applied — free 30-day trial unlocked
+            🎁 Referral code applied — free alert unlocked
           </p>
         ) : (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
@@ -162,10 +162,10 @@ export default function SignupPage() {
               <span className="absolute -top-3 left-3 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-semibold text-white">
                 Free
               </span>
-              <p className="font-semibold text-sm mt-1">30-Day Trial</p>
+              <p className="font-semibold text-sm mt-1">Free Alert</p>
               <p className="text-xl font-bold mt-1">$0</p>
               <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Referral exclusive · Phone required
+                Referral exclusive · 1 free drop alert
               </p>
             </button>
           )}
@@ -278,7 +278,7 @@ export default function SignupPage() {
                   style={{ backgroundColor: "var(--surface-2)" }}
                 />
                 <div className="mt-2 rounded-lg px-3 py-2 text-xs font-medium text-emerald-400" style={{ backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                  ✓ No credit card required. Your 30-day trial starts the moment you hit the button.
+                  ✓ No credit card required. You&apos;ll get your first alert free — then upgrade to keep going.
                 </div>
                 <p className="mt-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
                   By entering your phone number you agree to receive automated stock alert texts.
@@ -382,7 +382,7 @@ export default function SignupPage() {
               {status === "loading"
                 ? "Please wait…"
                 : mode === "trial"
-                ? "Activate free trial — no card, ever"
+                ? "Get my free alert — no card, ever"
                 : mode === "annual"
                 ? "Get annual access — $14.99"
                 : "Get 30-day access — $5.99"}
@@ -390,7 +390,7 @@ export default function SignupPage() {
 
             {mode === "trial" && (
               <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
-                Free for 30 days · No credit card · No hidden charges
+                1 free alert · No credit card · No hidden charges
               </p>
             )}
             {isPaid && (
