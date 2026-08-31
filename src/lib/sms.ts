@@ -67,12 +67,10 @@ export async function sendSmsOptInConfirmation(phone: string): Promise<void> {
   await sendSms(phone, body);
 }
 
-export async function sendStockAlertSms(
-  recipients: SmsRecipient[],
-  products: { title: string; url: string; isNew: boolean }[]
-): Promise<void> {
-  if (!getTwilioConfig() || recipients.length === 0 || products.length === 0) return;
-
+function buildSmsMessages(
+  products: { title: string; url: string; isNew: boolean }[],
+  trialFooter?: string
+): string[] {
   const hasNew = products.some((p) => p.isNew);
   const hasRestock = products.some((p) => !p.isNew);
   const intro = hasNew && hasRestock
@@ -81,9 +79,10 @@ export async function sendStockAlertSms(
     ? "New guitars at Guitars Garden:"
     : "Back in stock at Guitars Garden:";
 
-  // Build product lines then chunk into messages that stay under 1500 chars
   const productLines = products.map((p) => `${p.isNew ? "NEW" : "RESTOCK"}: ${p.title}\n${p.url}`);
-  const footer = "\n\nReply STOP to opt out.";
+  const footer = trialFooter
+    ? `\n\n${trialFooter}\n\nReply STOP to opt out.`
+    : "\n\nReply STOP to opt out.";
   const prefix = `Guitar Stock Alert: ${intro}\n\n`;
 
   const chunks: string[][] = [];
@@ -100,16 +99,30 @@ export async function sendStockAlertSms(
   }
   if (current.length > 0) chunks.push(current);
 
-  const messages = chunks.map((chunk, i) => {
+  return chunks.map((chunk, i) => {
     const part = chunks.length > 1 ? ` (${i + 1}/${chunks.length})` : "";
     return `Guitar Stock Alert${part}: ${intro}\n\n${chunk.join("\n\n")}${footer}`;
   });
-
-  await Promise.allSettled(
-    recipients.flatMap((r) => messages.map((body) => sendSms(r.phone, body)))
-  );
 }
 
-// Keep old names as aliases so existing imports don't break
-export const sendStockAddedSms = sendStockAlertSms as unknown as (r: SmsRecipient[], p: string[]) => Promise<void>;
-export const sendBackInStockSms = sendStockAlertSms as unknown as (r: SmsRecipient[], p: string[]) => Promise<void>;
+export async function sendStockAlertSms(
+  paidRecipients: SmsRecipient[],
+  trialRecipients: SmsRecipient[],
+  products: { title: string; url: string; isNew: boolean }[],
+  upgradeUrl: string
+): Promise<void> {
+  if (!getTwilioConfig() || products.length === 0) return;
+  if (paidRecipients.length === 0 && trialRecipients.length === 0) return;
+
+  const paidMessages = buildSmsMessages(products);
+  const trialMessages = buildSmsMessages(
+    products,
+    `That was your free alert. Upgrade to keep getting notified: ${upgradeUrl}`
+  );
+
+  await Promise.allSettled([
+    ...paidRecipients.flatMap((r) => paidMessages.map((body) => sendSms(r.phone, body))),
+    ...trialRecipients.flatMap((r) => trialMessages.map((body) => sendSms(r.phone, body))),
+  ]);
+}
+

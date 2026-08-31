@@ -238,12 +238,17 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
     const allRecipients = [...paidSubscribers, ...freeTrialSubscribers];
 
     if (allRecipients.length > 0) {
-      const smsRecipients = allRecipients
+      const paidSmsRecipients = paidSubscribers
+        .filter((s) => s.smsConsent && s.phone)
+        .map((s) => ({ name: s.name, phone: s.phone! }));
+      const trialSmsRecipients = freeTrialSubscribers
         .filter((s) => s.smsConsent && s.phone)
         .map((s) => ({ name: s.name, phone: s.phone! }));
 
+      const upgradeUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://guitarstockalert.com"}/signup`;
+
       await sendStockAlertEmail(paidSubscribers, freeTrialSubscribers, deduped);
-      if (smsRecipients.length > 0) await sendStockAlertSms(smsRecipients, deduped);
+      await sendStockAlertSms(paidSmsRecipients, trialSmsRecipients, deduped, upgradeUrl);
 
       // Mark free trial subscribers as having used their one alert
       if (freeTrialSubscribers.length > 0) {

@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
 
     await sendStockAlertEmail(
       subscribers.map((s) => ({ name: s.name, email: s.email })),
+      [],
       testProducts
     );
 
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
       .map((s) => ({ name: s.name, phone: s.phone! }));
 
     if (smsRecipients.length > 0) {
-      await sendStockAlertSms(smsRecipients, testProducts);
+      await sendStockAlertSms(smsRecipients, [], testProducts, "https://guitarstockalert.com/signup");
     }
 
     return NextResponse.json({ emailsSent: subscribers.length, smsSent: smsRecipients.length });
