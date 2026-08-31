@@ -70,6 +70,7 @@ model Subscriber {
   promoCode            String?
   smsConsent           Boolean        @default(false)
   reminderSentAt       DateTime?
+  freeAlertUsed        Boolean        @default(false)
 
   affiliateUses        AffiliateUse[]
 }

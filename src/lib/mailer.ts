@@ -14,12 +14,50 @@ function escapeHtml(str: string) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function buildAlertHtml(
+  recipientName: string,
+  subject: string,
+  productRowsHtml: string,
+  isTrial: boolean
+): string {
+  const upgradeBlock = isTrial ? `
+  <div style="margin-top:24px;padding:16px;background:#faf5ff;border:1px solid #e9d5ff;border-radius:10px;">
+    <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#7c3aed">That was your free alert.</p>
+    <p style="margin:0 0 12px;font-size:13px;color:#555">Upgrade to keep getting notified every time Guitars Garden drops new stock.</p>
+    <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:13px;">
+      Upgrade — from $5.99
+    </a>
+  </div>` : `
+  <p style="margin-top:32px;font-size:12px;color:#999">
+    Manage your subscription: <a href="${APP_URL}/account" style="color:#6366f1">${APP_URL}/account</a>
+  </p>`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1a1a1a;background:#fff">
+  <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">&#127928; Guitar Stock Alert</p>
+  <h2 style="margin:0 0 6px;font-size:22px;font-weight:700">${escapeHtml(subject)}</h2>
+  <p style="margin:0 0 16px;color:#555;font-size:14px">Hi ${escapeHtml(recipientName)}, here's what just changed at Guitars Garden:</p>
+  <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;padding:0 16px;margin-bottom:20px;">
+    ${productRowsHtml}
+  </div>
+  <a href="${STORE_URL}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:8px;font-size:14px">
+    View full store
+  </a>
+  ${upgradeBlock}
+</body>
+</html>`;
+}
+
 export async function sendStockAlertEmail(
-  recipients: EmailRecipient[],
+  paidRecipients: EmailRecipient[],
+  trialRecipients: EmailRecipient[],
   products: ProductAlert[]
 ): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey || recipients.length === 0 || products.length === 0) return;
+  if (!apiKey || products.length === 0) return;
+  if (paidRecipients.length === 0 && trialRecipients.length === 0) return;
 
   const resend = new Resend(apiKey);
   const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
@@ -49,44 +87,28 @@ export async function sendStockAlertEmail(
     `${p.isNew ? "[NEW]" : "[RESTOCK]"} ${p.title}\n${p.url}`
   ).join("\n\n");
 
-  await Promise.allSettled(
-    recipients.map((r) =>
+  const sends = [
+    ...paidRecipients.map((r) =>
       resend.emails.send({
         from: FROM,
         to: r.email,
         subject,
-        text: [
-          `Hi ${r.name},`,
-          "",
-          "Here's what just changed at Guitars Garden:",
-          "",
-          productTextList,
-          "",
-          `View the store: ${STORE_URL}`,
-          "",
-          `Manage your subscription: ${APP_URL}/account`,
-        ].join("\n"),
-        html: `
-<!DOCTYPE html>
-<html>
-<body style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1a1a1a;background:#fff">
-  <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">&#127928; Guitar Stock Alert</p>
-  <h2 style="margin:0 0 6px;font-size:22px;font-weight:700">${escapeHtml(subject)}</h2>
-  <p style="margin:0 0 16px;color:#555;font-size:14px">Hi ${escapeHtml(r.name)}, here's what just changed at Guitars Garden:</p>
-  <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;padding:0 16px;margin-bottom:20px;">
-    ${productRowsHtml}
-  </div>
-  <a href="${STORE_URL}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:8px;font-size:14px">
-    View full store →
-  </a>
-  <p style="margin-top:32px;font-size:12px;color:#999">
-    Manage your subscription: <a href="${APP_URL}/account" style="color:#6366f1">${APP_URL}/account</a>
-  </p>
-</body>
-</html>`,
+        text: [`Hi ${r.name},`, "", "Here's what just changed at Guitars Garden:", "", productTextList, "", `View the store: ${STORE_URL}`, "", `Manage your subscription: ${APP_URL}/account`].join("\n"),
+        html: buildAlertHtml(r.name, subject, productRowsHtml, false),
       })
-    )
-  );
+    ),
+    ...trialRecipients.map((r) =>
+      resend.emails.send({
+        from: FROM,
+        to: r.email,
+        subject,
+        text: [`Hi ${r.name},`, "", "Here's what just changed at Guitars Garden:", "", productTextList, "", `View the store: ${STORE_URL}`, "", `This was your free alert. Upgrade to keep getting notified: ${APP_URL}/signup`].join("\n"),
+        html: buildAlertHtml(r.name, subject, productRowsHtml, true),
+      })
+    ),
+  ];
+
+  await Promise.allSettled(sends);
 }
 
 
@@ -103,9 +125,9 @@ export async function sendPurchaseConfirmationEmail(
 
   const planConfig = PLANS[plan as PlanKey];
   const isTrial = plan === "trial";
-  const planName = isTrial ? "Free 30-Day Trial" : (planConfig?.name ?? plan);
-  const expiryLine = isTrial && accessExpiresAt
-    ? `Your free trial runs through <strong>${accessExpiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</strong>. To keep getting alerts after that, upgrade to an annual plan for just $14.99/year.`
+  const planName = isTrial ? "Free Trial" : (planConfig?.name ?? plan);
+  const expiryLine = isTrial
+    ? `You'll receive <strong>one free stock alert</strong> the next time Guitars Garden drops new inventory. After that, upgrade to keep getting notified.`
     : accessExpiresAt
     ? `Your access runs through <strong>${accessExpiresAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</strong> and will not auto-renew.`
     : `Your subscription renews monthly at $${amountPaid.toFixed(2)} until you cancel.`;
@@ -195,7 +217,7 @@ export async function sendTrialExpiredEmail(
 <body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
   <h2 style="margin:0 0 8px">🎸 Your free trial has ended</h2>
   <p>Hi ${escapeHtml(recipient.name)},</p>
-  <p>Your 30-day free trial of Guitar Stock Alert has expired and your alerts have been paused.</p>
+  <p>Your free alert has been used and your alerts have been paused.</p>
   <p>Guitars Garden drops new stock regularly — especially heading into the holidays. If you want back in before the next drop, you can lock in a full year for just <strong>$14.99</strong>. That's $1.25 a month to never miss a deal again.</p>
   <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;margin:16px 0">
     Stay in the loop — $14.99/year →
@@ -360,7 +382,7 @@ export async function sendAffiliateWelcomeEmail(
 
   <h3 style="margin:24px 0 8px;font-size:16px">How it works</h3>
   <ol style="margin:0;padding-left:20px;line-height:1.8;color:#333">
-    <li>Share your link — your audience signs up and gets <strong>30 free days</strong>, no credit card required</li>
+    <li>Share your link — your audience signs up and gets <strong>one free stock alert</strong>, no credit card required</li>
     <li>At the end of their trial, if they choose a plan, you earn your bounty — <strong>30-day attribution window</strong></li>
     <li>You'll start receiving stock alerts yourself right away</li>
   </ol>

@@ -210,25 +210,48 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
   // Send one combined alert for all new + restocked products
   if (deduped.length > 0) {
     const now = new Date();
-    const subscribers = await db.subscriber.findMany({
+
+    // Paid/affiliate subscribers with active access
+    const paidSubscribers = await db.subscriber.findMany({
       where: {
         active: true,
         planStatus: "active",
+        plan: { not: "trial" },
         OR: [
           { accessExpiresAt: null },
           { accessExpiresAt: { gt: now } },
         ],
       },
-      select: { name: true, email: true, phone: true, smsConsent: true },
+      select: { id: true, name: true, email: true, phone: true, smsConsent: true },
     });
 
-    if (subscribers.length > 0) {
-      const smsRecipients = subscribers
+    // Trial subscribers who haven't used their one free alert yet
+    const freeTrialSubscribers = await db.subscriber.findMany({
+      where: {
+        active: true,
+        plan: "trial",
+        freeAlertUsed: false,
+      },
+      select: { id: true, name: true, email: true, phone: true, smsConsent: true },
+    });
+
+    const allRecipients = [...paidSubscribers, ...freeTrialSubscribers];
+
+    if (allRecipients.length > 0) {
+      const smsRecipients = allRecipients
         .filter((s) => s.smsConsent && s.phone)
         .map((s) => ({ name: s.name, phone: s.phone! }));
 
-      await sendStockAlertEmail(subscribers, deduped);
+      await sendStockAlertEmail(paidSubscribers, freeTrialSubscribers, deduped);
       if (smsRecipients.length > 0) await sendStockAlertSms(smsRecipients, deduped);
+
+      // Mark free trial subscribers as having used their one alert
+      if (freeTrialSubscribers.length > 0) {
+        await db.subscriber.updateMany({
+          where: { id: { in: freeTrialSubscribers.map((s) => s.id) } },
+          data: { freeAlertUsed: true },
+        });
+      }
     }
   }
 
