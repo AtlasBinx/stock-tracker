@@ -10,7 +10,9 @@ function escapeHtml(str: string) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isAdminRequest(req)) return unauthorizedResponse();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const bearer = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!isAdminRequest(req) && bearer !== adminPassword) return unauthorizedResponse();
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "RESEND_API_KEY not set" }, { status: 500 });
