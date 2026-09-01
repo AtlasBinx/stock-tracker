@@ -37,9 +37,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 30);
-
     const subscriber = await db.subscriber.create({
       data: {
         name: name.trim(),
@@ -48,7 +45,7 @@ export async function POST(req: NextRequest) {
         active: true,
         plan: "trial",
         planStatus: "active",
-        accessExpiresAt: trialEndsAt,
+        accessExpiresAt: null, // one-free-alert model — no time expiry
         smsConsent: true,
         promoCode: upper,
       },
@@ -69,7 +66,7 @@ export async function POST(req: NextRequest) {
       { name: subscriber.name, email: subscriber.email },
       "trial",
       0,
-      trialEndsAt
+      null
     );
 
     await sendSmsOptInConfirmation(subscriber.phone!);

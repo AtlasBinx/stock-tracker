@@ -225,20 +225,34 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
       select: { id: true, name: true, email: true, phone: true, smsConsent: true },
     });
 
-    // Trial subscribers who haven't used their one free alert yet
+    // Legacy 30-day trial subscribers — include while their time window is still active
+    const legacyTrialSubscribers = await db.subscriber.findMany({
+      where: {
+        active: true,
+        plan: "trial",
+        planStatus: "active",
+        accessExpiresAt: { not: null, gt: now },
+      },
+      select: { id: true, name: true, email: true, phone: true, smsConsent: true },
+    });
+
+    // New one-free-alert subscribers (no expiry date, haven't used their alert yet)
     const freeTrialSubscribers = await db.subscriber.findMany({
       where: {
         active: true,
         plan: "trial",
+        accessExpiresAt: null,
         freeAlertUsed: false,
       },
       select: { id: true, name: true, email: true, phone: true, smsConsent: true },
     });
 
-    const allRecipients = [...paidSubscribers, ...freeTrialSubscribers];
+    // Legacy trial subs get the standard alert (no upgrade CTA), same as paid
+    const standardRecipients = [...paidSubscribers, ...legacyTrialSubscribers];
+    const allRecipients = [...standardRecipients, ...freeTrialSubscribers];
 
     if (allRecipients.length > 0) {
-      const paidSmsRecipients = paidSubscribers
+      const standardSmsRecipients = standardRecipients
         .filter((s) => s.smsConsent && s.phone)
         .map((s) => ({ name: s.name, phone: s.phone! }));
       const trialSmsRecipients = freeTrialSubscribers
@@ -247,10 +261,10 @@ export async function syncGuitarsGarden(): Promise<SyncSummary> {
 
       const upgradeUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://guitarstockalert.com"}/signup`;
 
-      await sendStockAlertEmail(paidSubscribers, freeTrialSubscribers, deduped);
-      await sendStockAlertSms(paidSmsRecipients, trialSmsRecipients, deduped, upgradeUrl);
+      await sendStockAlertEmail(standardRecipients, freeTrialSubscribers, deduped);
+      await sendStockAlertSms(standardSmsRecipients, trialSmsRecipients, deduped, upgradeUrl);
 
-      // Mark free trial subscribers as having used their one alert
+      // Only mark the new one-free-alert subscribers as used (not legacy 30-day trial)
       if (freeTrialSubscribers.length > 0) {
         await db.subscriber.updateMany({
           where: { id: { in: freeTrialSubscribers.map((s) => s.id) } },
