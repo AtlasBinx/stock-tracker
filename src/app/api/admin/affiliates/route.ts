@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/auth";
-import { sendAffiliateWelcomeEmail } from "@/lib/mailer";
+import { sendAffiliateWelcomeEmail, sendOwnerNewSubscriberEmail } from "@/lib/mailer";
 
 export const dynamic = "force-dynamic";
 
@@ -79,8 +79,14 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Send welcome email and SMS opt-in confirmation
   await sendAffiliateWelcomeEmail({ name: creatorName, email }, upperCode);
+  await sendOwnerNewSubscriberEmail({
+    name: creatorName,
+    email,
+    plan: "affiliate",
+    amountPaid: 0,
+    phone: phone || undefined,
+  });
 
   return NextResponse.json(affiliateCode, { status: 201 });
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { sendPurchaseConfirmationEmail } from "@/lib/mailer";
+import { sendPurchaseConfirmationEmail, sendOwnerNewSubscriberEmail } from "@/lib/mailer";
 import { sendSmsOptInConfirmation } from "@/lib/sms";
 
 export async function POST(req: NextRequest) {
@@ -68,6 +68,15 @@ export async function POST(req: NextRequest) {
       0,
       null
     );
+
+    await sendOwnerNewSubscriberEmail({
+      name: subscriber.name,
+      email: subscriber.email,
+      plan: "trial",
+      amountPaid: 0,
+      promoCode: upper,
+      phone: subscriber.phone ?? undefined,
+    });
 
     await sendSmsOptInConfirmation(subscriber.phone!);
 

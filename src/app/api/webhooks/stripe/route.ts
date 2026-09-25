@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { sendPurchaseConfirmationEmail, sendCancellationConfirmationEmail } from "@/lib/mailer";
+import { sendPurchaseConfirmationEmail, sendCancellationConfirmationEmail, sendOwnerNewSubscriberEmail } from "@/lib/mailer";
 import { sendSmsOptInConfirmation, toE164 } from "@/lib/sms";
 import type Stripe from "stripe";
 
@@ -124,6 +124,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   await sendPurchaseConfirmationEmail({ name, email }, plan, amountPaid, accessExpiresAt);
+  await sendOwnerNewSubscriberEmail({
+    name,
+    email,
+    plan,
+    amountPaid,
+    promoCode: promoCode || undefined,
+    phone: rawPhone || undefined,
+  });
 
   // Send SMS opt-in confirmation if subscriber consented and has a phone number
   if (smsConsent === "true" && phone) {

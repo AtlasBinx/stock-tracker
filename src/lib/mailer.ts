@@ -283,6 +283,62 @@ export async function sendExpiryReminderEmail(
   });
 }
 
+export async function sendOwnerNewSubscriberEmail(details: {
+  name: string;
+  email: string;
+  plan: string;
+  amountPaid: number;
+  promoCode?: string;
+  phone?: string;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const ownerEmail = process.env.OWNER_EMAIL;
+  if (!apiKey || !ownerEmail) return;
+  const resend = new Resend(apiKey);
+  const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
+
+  const planLabel: Record<string, string> = {
+    annual: "Annual ($14.99)",
+    "30day": "30-Day ($5.99)",
+    monthly: "Monthly ($5.99/mo)",
+    trial: "Free Trial",
+    affiliate: "Affiliate",
+  };
+
+  const rows = [
+    ["Name", details.name],
+    ["Email", details.email],
+    ["Plan", planLabel[details.plan] ?? details.plan],
+    ...(details.amountPaid > 0 ? [["Amount paid", `$${details.amountPaid.toFixed(2)}`]] : []),
+    ...(details.promoCode ? [["Promo code", details.promoCode]] : []),
+    ...(details.phone ? [["Phone", details.phone]] : []),
+  ];
+
+  const rowsHtml = rows.map(([label, value]) =>
+    `<tr><td style="padding:8px 14px;font-weight:600;white-space:nowrap;color:#6b7280;font-size:13px">${label}</td><td style="padding:8px 14px;font-size:13px">${escapeHtml(String(value))}</td></tr>`
+  ).join("");
+
+  await resend.emails.send({
+    from: FROM,
+    to: ownerEmail,
+    subject: `New subscriber: ${details.name} (${planLabel[details.plan] ?? details.plan})`,
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1a1a1a">
+  <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">Guitar Stock Alert</p>
+  <h2 style="margin:0 0 16px;font-size:20px;font-weight:700">New subscriber</h2>
+  <table style="width:100%;border-collapse:collapse;background:#f9fafb;border-radius:8px;overflow:hidden">
+    ${rowsHtml}
+  </table>
+  <p style="margin-top:20px;font-size:12px;color:#999">
+    <a href="${APP_URL}/admin" style="color:#6366f1">View admin dashboard</a>
+  </p>
+</body>
+</html>`,
+  });
+}
+
 export interface AffiliateReportData {
   creatorName: string;
   email: string;
