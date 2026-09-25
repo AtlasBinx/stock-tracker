@@ -59,8 +59,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const email = session.customer_email ?? session.customer_details?.email;
   if (!email || !plan) return;
 
-  const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-  const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
+  const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
+    expand: ["items.data"],
+  });
+  // current_period_end moved to subscription items in newer Stripe API versions
+  const periodEnd =
+    (subscription as any).current_period_end ??
+    (subscription as any).items?.data?.[0]?.current_period_end;
+  const currentPeriodEnd = new Date(periodEnd * 1000);
 
   const isPrepaid = plan === "30day" || plan === "annual";
   const accessExpiresAt = isPrepaid ? currentPeriodEnd : null;
@@ -140,7 +146,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   const cancelAtPeriodEnd = (subscription as any).cancel_at_period_end;
   const cancelAt = (subscription as any).cancel_at;
-  const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
+  const periodEnd =
+    (subscription as any).current_period_end ??
+    (subscription as any).items?.data?.[0]?.current_period_end;
+  const currentPeriodEnd = new Date(periodEnd * 1000);
   const isPrepaid = sub.plan === "30day" || sub.plan === "annual";
 
   if (subscription.status === "active" && cancelAtPeriodEnd) {
