@@ -199,6 +199,40 @@ export async function sendCancellationConfirmationEmail(
   });
 }
 
+export async function sendFreeAlertFollowUpEmail(
+  recipient: EmailRecipient
+): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const resend = new Resend(apiKey);
+  const FROM = process.env.RESEND_FROM ?? "Guitar Stock Alert <alerts@guitarstockalert.com>";
+
+  await resend.emails.send({
+    from: FROM,
+    to: recipient.email,
+    subject: `Did you see what just dropped at Guitars Garden?`,
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+  <h2 style="margin:0 0 8px">Your free alert just fired 🎸</h2>
+  <p>Hi ${escapeHtml(recipient.name)},</p>
+  <p>We just sent you an alert for new stock at Guitars Garden — that was your one free alert.</p>
+  <p>Guitars Garden drops inventory regularly and it moves fast. If you want to keep getting notified the moment something new hits, lock in a full year for just <strong>$14.99</strong>. That's $1.25 a month to never miss a deal.</p>
+  <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;margin:16px 0">
+    Keep getting alerts — $14.99/year →
+  </a>
+  <p style="font-size:13px;color:#555;margin-top:8px">
+    Not ready to commit? Grab a <a href="${APP_URL}/signup" style="color:#4f46e5">30-day pass for $5.99</a> instead.
+  </p>
+  <p style="font-size:12px;color:#999;margin-top:32px">
+    No action needed if you'd rather not continue — you won't be charged anything.
+  </p>
+</body>
+</html>`,
+  });
+}
+
 export async function sendTrialExpiredEmail(
   recipient: EmailRecipient
 ): Promise<void> {

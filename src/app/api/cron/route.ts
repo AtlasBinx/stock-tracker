@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { syncGuitarsGarden } from "@/lib/guitarsgarden";
 import { db } from "@/lib/db";
-import { sendExpiryReminderEmail, sendTrialExpiredEmail } from "@/lib/mailer";
+import { sendExpiryReminderEmail, sendTrialExpiredEmail, sendFreeAlertFollowUpEmail } from "@/lib/mailer";
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -39,6 +39,24 @@ export async function GET(req: Request) {
     }
   }
 
+  // Send follow-up to one-free-alert trial subscribers whose alert just fired
+  const freeAlertFollowUps = await db.subscriber.findMany({
+    where: {
+      plan: "trial",
+      freeAlertUsed: true,
+      reminderSentAt: null,
+    },
+    select: { id: true, name: true, email: true },
+  });
+
+  for (const sub of freeAlertFollowUps) {
+    await sendFreeAlertFollowUpEmail({ name: sub.name, email: sub.email });
+    await db.subscriber.update({
+      where: { id: sub.id },
+      data: { reminderSentAt: new Date() },
+    });
+  }
+
   // Send expiry reminders to subscribers whose access ends in 2–4 days (haven't been sent one yet)
   const in2Days = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
   const in4Days = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
@@ -68,6 +86,7 @@ export async function GET(req: Request) {
     ok: true,
     ...result,
     expiredDeactivated: justExpired.length,
+    freeAlertFollowUpsSent: freeAlertFollowUps.length,
     expiryRemindersSent: expiring.length,
     timestamp: new Date().toISOString(),
   });
