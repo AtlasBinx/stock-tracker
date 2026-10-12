@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { syncGuitarsGarden } from "@/lib/guitarsgarden";
 import { db } from "@/lib/db";
-import { sendExpiryReminderEmail, sendTrialExpiredEmail, sendFreeAlertFollowUpEmail } from "@/lib/mailer";
+import { sendExpiryReminderEmail, sendTrialExpiredEmail, sendFreeAlertFollowUpEmail, sendFreeAlertSecondFollowUpEmail } from "@/lib/mailer";
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -57,6 +57,27 @@ export async function GET(req: Request) {
     });
   }
 
+  // Send second follow-up 4 days after the first, to trial subs who still haven't converted
+  const fourDaysAgo = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000);
+
+  const secondFollowUps = await db.subscriber.findMany({
+    where: {
+      plan: "trial",
+      freeAlertUsed: true,
+      reminderSentAt: { lte: fourDaysAgo },
+      secondReminderSentAt: null,
+    },
+    select: { id: true, name: true, email: true },
+  });
+
+  for (const sub of secondFollowUps) {
+    await sendFreeAlertSecondFollowUpEmail({ name: sub.name, email: sub.email });
+    await db.subscriber.update({
+      where: { id: sub.id },
+      data: { secondReminderSentAt: new Date() },
+    });
+  }
+
   // Send expiry reminders to subscribers whose access ends in 2–4 days (haven't been sent one yet)
   const in2Days = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
   const in4Days = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
@@ -87,6 +108,7 @@ export async function GET(req: Request) {
     ...result,
     expiredDeactivated: justExpired.length,
     freeAlertFollowUpsSent: freeAlertFollowUps.length,
+    secondFollowUpsSent: secondFollowUps.length,
     expiryRemindersSent: expiring.length,
     timestamp: new Date().toISOString(),
   });
