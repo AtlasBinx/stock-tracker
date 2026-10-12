@@ -244,32 +244,20 @@ export async function sendFreeAlertSecondFollowUpEmail(
   await resend.emails.send({
     from: FROM,
     to: recipient.email,
-    subject: `Guitars Garden has dropped new inventory since your free alert`,
+    subject: `Never miss a drop for $1.25 a month`,
     html: `
 <!DOCTYPE html>
 <html>
 <body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
-  <h2 style="margin:0 0 8px">More guitars have dropped 🎸</h2>
+  <h2 style="margin:0 0 8px">One guitar pick a month. 🎸</h2>
   <p>Hi ${escapeHtml(recipient.name)},</p>
-  <p>Since your free alert fired, Guitars Garden has added new inventory — and it's already moving.</p>
-  <p>With a subscription you get notified the moment anything new hits, so you're never the last to know. Here's what's available:</p>
-  <table style="width:100%;border-collapse:collapse;margin:16px 0">
-    <tr style="background:#f5f5f5">
-      <td style="padding:12px 14px;font-weight:700">Annual</td>
-      <td style="padding:12px 14px;font-weight:700">$14.99/year</td>
-      <td style="padding:12px 14px;color:#555">$1.25/month — best value</td>
-    </tr>
-    <tr>
-      <td style="padding:12px 14px;font-weight:700;border-top:1px solid #e5e5e5">30-Day</td>
-      <td style="padding:12px 14px;border-top:1px solid #e5e5e5">$5.99</td>
-      <td style="padding:12px 14px;color:#555;border-top:1px solid #e5e5e5">No commitment</td>
-    </tr>
-  </table>
-  <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;margin:4px 0 16px">
-    Get back in — $14.99/year →
+  <p>That's all a full year of Guitar Stock Alert costs — <strong>$1.25 a month</strong>. Less than a single pick, and you'll never miss a Guitars Garden drop again.</p>
+  <p>Guitars Garden doesn't restock on a schedule. New guitars appear without warning and sell fast. A subscription means you find out the moment it happens — not after.</p>
+  <a href="${APP_URL}/signup" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px;margin:16px 0">
+    Stay in the loop — $14.99/year →
   </a>
   <p style="font-size:13px;color:#555;margin-top:8px">
-    Prefer a shorter commitment? <a href="${APP_URL}/signup" style="color:#4f46e5">30-day pass for $5.99</a>.
+    Not ready to commit to a year? <a href="${APP_URL}/signup" style="color:#4f46e5">30-day pass for $5.99</a>.
   </p>
   <p style="font-size:12px;color:#999;margin-top:32px">
     No action needed if you'd rather not continue — you won't be charged anything.
